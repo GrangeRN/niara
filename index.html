@@ -2784,36 +2784,69 @@ function showStudentReport() {
   const tp = classStats.totalPossible || 100; // already excludes bonus
   const pctScore = tp > 0 ? Math.round((total/tp)*1000)/10 : 0;
 
-  // Group items by section
+  // Performance helpers — >90 Strong, >=80 Acceptable, <80 Needs Improvement
+  function perfLabel(p) {
+    if (p > 0.90) return 'Strong';
+    if (p >= 0.80) return 'Acceptable';
+    return 'Needs Improvement';
+  }
+  function perfStyle(p) {
+    if (p > 0.90) return { bg:'#e8f5e9', tx:'#155a2e' };
+    if (p >= 0.80) return { bg:'#dce8f8', tx:'#1a4a8a' };
+    return { bg:'#fce4ec', tx:'#8b0000' };
+  }
+
+  // Group all items by section — keeps bonus items for faculty question list
   const bySection = {};
   Object.values(student.items).forEach(si => {
     if (!bySection[si.section]) bySection[si.section] = [];
     bySection[si.section].push(si);
   });
 
-  // Module performance — exclude bonus from possible totals
+  // Module performance — exclude bonus from all calculations
   const modPerf = {};
   for (const [sec, sitems] of Object.entries(bySection)) {
-    const got = sitems.reduce((s,i) => s+i.score, 0);
-    const pos = sitems.filter(i => !i.isBonus).reduce((s,i) => s+i.outOf, 0);
-    modPerf[sec] = { got, pos, pct: pos>0 ? got/pos : 0, count: sitems.length };
+    const nonBonus = sitems.filter(i => !i.isBonus);
+    if (nonBonus.length === 0) continue;
+    const got = nonBonus.reduce((s,i) => s+i.score, 0);
+    const pos = nonBonus.reduce((s,i) => s+i.outOf, 0);
+    modPerf[sec] = { got, pos, pct: pos>0 ? got/pos : 0, count: nonBonus.length };
   }
 
-  // Remediation text
+  // NGEN stats — exclude MC and bonus
+  const qtypeNames = { 'M-S':'Multi-Select (SATA)', 'MAT':'Matching', 'FIB':'Fill in the Blank', 'ORD':'Ordering' };
+  const qtypeStats = {};
+  Object.values(student.items).forEach(si => {
+    if (si.qtype === 'MC' || si.isBonus) return;
+    if (!qtypeStats[si.qtype]) qtypeStats[si.qtype] = { total:0, correct:0, incorrect:0 };
+    qtypeStats[si.qtype].total++;
+    if (si.outOf > 0 && (si.score / si.outOf) >= 0.99) qtypeStats[si.qtype].correct++;
+    else qtypeStats[si.qtype].incorrect++;
+  });
+
+  // Remediation — weak modules and NGEN types below 80%
   const weakMods = Object.entries(modPerf)
-    .filter(([,v]) => v.pct < 0.70)
+    .filter(([,v]) => v.pct < 0.80)
     .sort((a,b) => a[1].pct - b[1].pct)
     .map(([k,v]) => k + ' (' + pct(v.pct) + ')');
-  let remText = weakMods.length > 0
-    ? 'Priority review areas: ' + weakMods.join(', ') + '. Recommend focused study on content where performance fell below 70%.'
-    : 'Performance is consistent across all content areas. No priority remediation areas identified at this time.';
+  const weakNGEN = Object.entries(qtypeStats)
+    .filter(([,v]) => v.total > 0 && (v.correct/v.total) < 0.80)
+    .sort((a,b) => (a[1].correct/a[1].total) - (b[1].correct/b[1].total))
+    .map(([qt,v]) => (qtypeNames[qt]||qt) + ' (' + pct(v.correct/v.total) + ')');
+  let remText = '';
+  if (!weakMods.length && !weakNGEN.length) {
+    remText = 'Performance is consistent across all content areas and question types. No priority remediation areas identified at this time.';
+  } else {
+    if (weakMods.length) remText += 'Priority content review areas: ' + weakMods.join(', ') + '. Focused study is recommended for content where performance fell below 80%.';
+    if (weakNGEN.length) remText += (weakMods.length ? ' ' : '') + 'NGEN question types for improvement: ' + weakNGEN.join(', ') + '. Practice with these question formats in addition to content review.';
+  }
 
-  // All student items flat
+  // All student items flat (includes bonus — faculty reference only)
   const allItems = Object.values(student.items);
 
-  // Score color — use high-contrast colors readable on white background
-  const scoreColor = pctScore >= 77 ? '#155a2e' : pctScore >= 70 ? '#8b3a00' : '#8b0000';
-  const scoreBg    = pctScore >= 77 ? '#d4edda' : pctScore >= 70 ? '#fde8d0' : '#fdd';
+  // Score badge color
+  const scoreColor = pctScore > 90 ? '#155a2e' : pctScore >= 80 ? '#1a4a8a' : '#8b0000';
+  const scoreBg    = pctScore > 90 ? '#d4edda' : pctScore >= 80 ? '#dce8f8' : '#fce4ec';
 
   // ── Header ──
   let html = `<div class="student-header-block">
@@ -2833,32 +2866,68 @@ function showStudentReport() {
     </div>
   </div>`;
 
-  // ── Side-by-side: Module table + Remediation ──
-  html += `<div class="student-top-row">
-    <div>
-      <div class="module-label" style="margin-bottom:10px;">Module/Content Area Performance Summary</div>
-      <table style="font-size:0.84rem;width:100%;">
-        <thead><tr>
-          <th style="background:var(--navy);color:white;padding:6px 12px;text-align:left;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;">Module/Content Area</th>
-          <th style="background:var(--navy);color:white;padding:6px 12px;text-align:center;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;">Items</th>
-          <th style="background:var(--navy);color:white;padding:6px 12px;text-align:center;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;">Score</th>
-          <th style="background:var(--navy);color:white;padding:6px 12px;text-align:center;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;">%</th>
-        </tr></thead><tbody>`;
+  // ── Side-by-side: Module table + NGEN table ──
+  const thS = 'background:var(--navy);color:white;padding:5px 10px;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;';
+
+  let modHtml = `<div class="module-label" style="margin-bottom:10px;">Module / Content Area Performance Summary</div>
+    <table style="font-size:0.82rem;width:100%;">
+      <thead><tr>
+        <th style="${thS}text-align:left;">Content Area</th>
+        <th style="${thS}text-align:center;">Items</th>
+        <th style="${thS}text-align:center;">Score</th>
+        <th style="${thS}text-align:center;">%</th>
+        <th style="${thS}text-align:center;">Performance</th>
+      </tr></thead><tbody>`;
   for (const [sec, mp] of Object.entries(modPerf)) {
-    const bg = mp.pct >= 0.85 ? '#e8f5e9' : mp.pct >= 0.70 ? '' : '#fce4ec';
-    html += `<tr style="background:${bg};">
-      <td style="padding:6px 12px;">${esc(sec)}</td>
-      <td style="padding:6px 12px;text-align:center;">${mp.count}</td>
-      <td style="padding:6px 12px;text-align:center;">${fmt1(mp.got)}/${fmt1(mp.pos)}</td>
-      <td style="padding:6px 12px;text-align:center;font-weight:700;">${pct(mp.pct)}</td>
+    const ps = perfStyle(mp.pct);
+    modHtml += `<tr style="background:${ps.bg};">
+      <td style="padding:5px 10px;">${esc(sec)}</td>
+      <td style="padding:5px 10px;text-align:center;">${mp.count}</td>
+      <td style="padding:5px 10px;text-align:center;">${fmt1(mp.got)}/${fmt1(mp.pos)}</td>
+      <td style="padding:5px 10px;text-align:center;font-weight:700;color:${ps.tx};">${pct(mp.pct)}</td>
+      <td style="padding:5px 10px;text-align:center;font-weight:${mp.pct<0.80?'700':'400'};color:${ps.tx};">${perfLabel(mp.pct)}</td>
     </tr>`;
   }
-  html += `</tbody></table>
-    </div>
-    <div>
-      <div class="module-label" style="margin-bottom:10px;">Remediation Summary</div>
-      <div class="remediation-box" style="margin-top:0;">${esc(remText)}</div>
-    </div>
+  modHtml += `</tbody></table>`;
+
+  const hasNGEN = Object.keys(qtypeStats).length > 0;
+  let ngenHtml = `<div class="module-label" style="margin-bottom:10px;">NGEN Question Performance Summary</div>`;
+  if (hasNGEN) {
+    ngenHtml += `<table style="font-size:0.82rem;width:100%;">
+      <thead><tr>
+        <th style="${thS}text-align:left;">Question Type</th>
+        <th style="${thS}text-align:center;">Total</th>
+        <th style="${thS}text-align:center;">Correct</th>
+        <th style="${thS}text-align:center;">Incorrect</th>
+        <th style="${thS}text-align:center;">%</th>
+        <th style="${thS}text-align:center;">Performance</th>
+      </tr></thead><tbody>`;
+    for (const [qt, v] of Object.entries(qtypeStats)) {
+      const p = v.total > 0 ? v.correct / v.total : 0;
+      const ps = perfStyle(p);
+      ngenHtml += `<tr style="background:${ps.bg};">
+        <td style="padding:5px 10px;">${esc(qtypeNames[qt]||qt)}</td>
+        <td style="padding:5px 10px;text-align:center;">${v.total}</td>
+        <td style="padding:5px 10px;text-align:center;">${v.correct}</td>
+        <td style="padding:5px 10px;text-align:center;">${v.incorrect}</td>
+        <td style="padding:5px 10px;text-align:center;font-weight:700;color:${ps.tx};">${pct(p)}</td>
+        <td style="padding:5px 10px;text-align:center;font-weight:${p<0.80?'700':'400'};color:${ps.tx};">${perfLabel(p)}</td>
+      </tr>`;
+    }
+    ngenHtml += `</tbody></table>`;
+  } else {
+    ngenHtml += `<div style="font-size:0.84rem;color:var(--text-light);padding:10px 0;font-style:italic;">No NGEN (non-multiple choice) question types present on this exam.</div>`;
+  }
+
+  html += `<div class="student-top-row">
+    <div>${modHtml}</div>
+    <div>${ngenHtml}</div>
+  </div>`;
+
+  // ── Remediation — full width below both tables ──
+  html += `<div style="border:1px solid var(--border);border-top:none;padding:16px 20px;">
+    <div class="module-label" style="margin-bottom:10px;">Remediation Recommendations</div>
+    <div class="remediation-box" style="margin-top:0;">${esc(remText)}</div>
   </div>`;
 
   // ── Toggle buttons ──
@@ -2867,7 +2936,6 @@ function showStudentReport() {
     <button class="student-view-btn" id="svBtn-result" onclick="setStudentView('result')">📊 View by Result</button>
   </div>`;
 
-  // ── Question list container ──
   html += `<div class="student-question-list" id="studentQList"></div>`;
 
   area.innerHTML = html;
@@ -3293,113 +3361,218 @@ function clearAndRestart() {
 // ══════════════════════════════════════════════
 async function downloadStudentReport(sid) {
   if (!parsedData || !sid) return;
-  const { students, items, classStats, totalScores, meta } = parsedData;
+  const { students, classStats, totalScores, meta } = parsedData;
   const student = students[sid];
   if (!student) return;
+
   const wb = new ExcelJS.Workbook();
-  const C = { nav:'FF1e3a6e', navDark:'FF152d57', steel:'FF4a7ab5', offwhite:'FFF4F7FB', white:'FFFFFFFF', green:'FF1b7a3e', orange:'FFd4620a', red:'FFc0392b', lightGreen:'FFe8f5e9', lightOrange:'FFFFF3e0', lightRed:'FFFCE4EC' };
+  wb.creator = 'NIARA · GrangeRN';
+  wb.created = new Date();
+
+  const C = {
+    nav:     'FF1e3a6e', navDark: 'FF152d57', steel:  'FF4a7ab5',
+    teal:    'FF1a5276', offwhite:'FFF4F7FB', white:  'FFFFFFFF',
+    green:   'FF1b7a3e', red:     'FF7b1a2a',
+    lgGreen: 'FFe8f5e9', lgBlue:  'FFdce8f8', lgRed:  'FFfce4ec',
+    yellow:  'FFFFF8E1', powder:  'FFadc8e8'
+  };
   function wf(hex) { return { type:'pattern', pattern:'solid', fgColor:{ argb:hex } }; }
+
   const ws = wb.addWorksheet('Student Report');
   ws.views = [{ showGridLines: false }];
-  ws.mergeCells('A1:E1'); ws.getCell('A1').value = 'NIARA — Student Exam Performance Report';
-  ws.getCell('A1').style = { font:{ bold:true, color:{ argb:C.white }, size:15 }, fill: wf(C.nav), alignment:{ horizontal:'left', vertical:'middle' } };
-  ws.getRow(1).height = 32;
-  ws.mergeCells('A2:E2'); ws.getCell('A2').value = 'GrangeRN · Nursing Item Analysis & Reporting Assistant · For remediation guidance only';
-  ws.getCell('A2').style = { font:{ italic:true, color:{ argb:C.white }, size:8 }, fill: wf(C.navDark), alignment:{ horizontal:'left', vertical:'middle' } };
-  ws.getRow(2).height = 18; ws.getRow(3).height = 10;
-  ws.mergeCells('A4:E4'); ws.getCell('A4').value = 'STUDENT INFORMATION';
-  ws.getCell('A4').style = { font:{ bold:true, color:{ argb:C.white }, size:9 }, fill: wf(C.navDark), alignment:{ horizontal:'left', vertical:'middle' } };
-  ws.getRow(4).height = 22;
-  [['Name', student.lname+', '+student.fname],['Course', meta.courseLabel],['Exam', meta.examName],['Semester / Year', meta.semester+' '+meta.year]].forEach((row, i) => {
-    const r = 5+i; ws.getRow(r).height = 20;
-    ws.getCell(r,1).value = row[0]; ws.getCell(r,1).style = { font:{ bold:true, size:9, color:{ argb:C.steel } }, fill: wf(C.offwhite), alignment:{ vertical:'middle' } };
-    ws.mergeCells(r,2,r,5); ws.getCell(r,2).value = row[1]; ws.getCell(r,2).style = { font:{ size:9 }, fill: wf(C.offwhite), alignment:{ vertical:'middle' } };
+  // 3-column layout: Label (wide) | Value/% (medium) | Performance (medium)
+  ws.columns = [{ width:50 }, { width:16 }, { width:24 }];
+
+  let R = 1;
+  function merge(r) { ws.mergeCells(`A${r}:C${r}`); }
+
+  // Performance helpers — >90 Strong, >=80 Acceptable, <80 Needs Improvement
+  function perfLabel(p) {
+    if (p > 0.90) return 'Strong';
+    if (p >= 0.80) return 'Acceptable';
+    return 'Needs Improvement';
+  }
+  function perfFill(p) {
+    if (p > 0.90) return { bg:C.lgGreen, tx:C.green };
+    if (p >= 0.80) return { bg:C.lgBlue,  tx:C.teal  };
+    return            { bg:C.lgRed,   tx:C.red   };
+  }
+
+  // ── Row 1: Title banner ──
+  merge(R);
+  ws.getCell(`A${R}`).value = 'NIARA — Student Exam Performance Report';
+  ws.getCell(`A${R}`).style = { font:{ bold:true, color:{ argb:C.white }, size:16, name:'Calibri' }, fill:wf(C.nav), alignment:{ horizontal:'left', vertical:'middle', indent:1 } };
+  ws.getRow(R).height = 36; R++;
+
+  // ── Row 2: Subtitle ──
+  merge(R);
+  ws.getCell(`A${R}`).value = 'Nursing Item Analysis & Reporting Assistant · For remediation guidance only';
+  ws.getCell(`A${R}`).style = { font:{ italic:true, color:{ argb:C.powder }, size:8 }, fill:wf(C.navDark), alignment:{ horizontal:'left', vertical:'middle', indent:1 } };
+  ws.getRow(R).height = 16; R++;
+
+  // ── Spacer ──
+  ws.getRow(R).height = 8; R++;
+
+  // ── Student Information header ──
+  merge(R);
+  ws.getCell(`A${R}`).value = 'STUDENT INFORMATION';
+  ws.getCell(`A${R}`).style = { font:{ bold:true, color:{ argb:C.white }, size:9 }, fill:wf(C.navDark), alignment:{ horizontal:'left', vertical:'middle', indent:1 } };
+  ws.getRow(R).height = 20; R++;
+
+  [['Name', student.lname+', '+student.fname], ['Course', meta.courseLabel], ['Exam', meta.examName], ['Semester / Year', meta.semester+' '+meta.year]].forEach(([lbl, val]) => {
+    ws.getCell(R,1).value = lbl;
+    ws.getCell(R,1).style = { font:{ bold:true, size:9, color:{ argb:C.steel } }, fill:wf(C.offwhite), alignment:{ vertical:'middle', indent:1 } };
+    ws.mergeCells(R,2,R,3);
+    ws.getCell(R,2).value = val;
+    ws.getCell(R,2).style = { font:{ size:9 }, fill:wf(C.offwhite), alignment:{ vertical:'middle', indent:1 } };
+    ws.getRow(R).height = 18; R++;
   });
-  ws.mergeCells('A9:E9'); ws.getCell('A9').value = 'This report identifies content areas and question types for targeted study. Scores are initial raw scores and do not reflect instructor grade adjustments. Your official grade is in the course LMS.';
-  ws.getCell('A9').style = { font:{ italic:true, size:8, color:{ argb:C.steel } }, fill: wf('FFFFF8E1'), alignment:{ horizontal:'left', vertical:'middle', wrapText:true } };
-  ws.getRow(9).height = 42; ws.getRow(10).height = 10;
+
+  // ── Spacer ──
+  ws.getRow(R).height = 8; R++;
+
+  // ── Exam Score ──
+  const studentTotal = Math.round((totalScores[sid] || 0) * 10) / 10;
+  merge(R);
+  ws.getCell(`A${R}`).value = 'Exam Score (Raw):   ' + studentTotal;
+  ws.getCell(`A${R}`).style = { font:{ bold:true, size:14, color:{ argb:C.nav }, name:'Calibri' }, fill:wf(C.lgBlue), alignment:{ horizontal:'center', vertical:'middle' } };
+  ws.getRow(R).height = 30; R++;
+
+  // ── Score disclaimer ──
+  merge(R);
+  ws.getCell(`A${R}`).value = 'This is the initial raw score from the Brightspace CSV export and includes any bonus points earned. It does not reflect grade adjustments, rekeyed items, or other changes made by the instructor after exam analysis. Your official grade is posted in the course LMS.';
+  ws.getCell(`A${R}`).style = { font:{ italic:true, size:8, color:{ argb:C.steel } }, fill:wf(C.yellow), alignment:{ horizontal:'left', vertical:'middle', wrapText:true, indent:1 } };
+  ws.getRow(R).height = 48; R++;
+
+  // ── Spacer ──
+  ws.getRow(R).height = 8; R++;
+
+  // ── Module / Content Area Performance ── (exclude bonus)
   const bySection = {};
-  Object.values(student.items).forEach(si => { if (!bySection[si.section]) bySection[si.section]=[]; bySection[si.section].push(si); });
+  Object.values(student.items).forEach(si => {
+    if (si.isBonus) return;
+    if (!bySection[si.section]) bySection[si.section] = [];
+    bySection[si.section].push(si);
+  });
   const modPerf = {};
-  for (const [sec,sitems] of Object.entries(bySection)) {
-    const got=sitems.reduce((s,i)=>s+i.score,0); const pos=sitems.filter(i=>!i.isBonus).reduce((s,i)=>s+i.outOf,0);
-    modPerf[sec]={got,pos,pct:pos>0?got/pos:0,count:sitems.length};
+  for (const [sec, sitems] of Object.entries(bySection)) {
+    const got = sitems.reduce((s,i) => s+i.score, 0);
+    const pos = sitems.reduce((s,i) => s+i.outOf, 0);
+    modPerf[sec] = { got, pos, p: pos>0 ? got/pos : 0 };
   }
-  ws.mergeCells('A11:E11'); ws.getCell('A11').value = 'MODULE / CONTENT AREA PERFORMANCE SUMMARY';
-  ws.getCell('A11').style = { font:{ bold:true, color:{ argb:C.white }, size:9 }, fill: wf(C.nav), alignment:{ horizontal:'left', vertical:'middle' } };
-  ws.getRow(11).height = 22;
-  const mhRow = ws.getRow(12); mhRow.height = 20;
-  ['Content Area','Items','Score','% Correct','Performance'].forEach((h,i)=>{ mhRow.getCell(i+1).value=h; mhRow.getCell(i+1).style={font:{bold:true,color:{argb:C.white},size:9},fill:wf(C.steel),alignment:{horizontal:'center',vertical:'middle'}}; });
-  let mRow = 13;
-  for (const [sec,mp] of Object.entries(modPerf)) {
-    const bg=mp.pct>=0.85?C.lightGreen:mp.pct>=0.70?C.offwhite:C.lightRed; const pc=mp.pct>=0.85?C.green:mp.pct>=0.70?C.steel:C.red;
-    const row=ws.getRow(mRow); row.height=20;
-    row.getCell(1).value=sec||'Uncategorized'; row.getCell(1).style={font:{size:9},fill:wf(bg),alignment:{vertical:'middle'}};
-    row.getCell(2).value=mp.count; row.getCell(2).style={font:{size:9},fill:wf(bg),alignment:{horizontal:'center',vertical:'middle'}};
-    row.getCell(3).value=Math.round(mp.got*10)/10+'/'+Math.round(mp.pos*10)/10; row.getCell(3).style={font:{size:9},fill:wf(bg),alignment:{horizontal:'center',vertical:'middle'}};
-    row.getCell(4).value=pct(mp.pct); row.getCell(4).style={font:{bold:true,size:9,color:{argb:pc}},fill:wf(bg),alignment:{horizontal:'center',vertical:'middle'}};
-    const perf=mp.pct>=0.85?'Strong':mp.pct>=0.70?'Acceptable':'Area for Improvement';
-    row.getCell(5).value=perf; row.getCell(5).style={font:{bold:mp.pct<0.70,size:9,color:{argb:pc}},fill:wf(bg),alignment:{horizontal:'center',vertical:'middle'}};
-    mRow++;
+
+  merge(R);
+  ws.getCell(`A${R}`).value = 'MODULE / CONTENT AREA PERFORMANCE SUMMARY';
+  ws.getCell(`A${R}`).style = { font:{ bold:true, color:{ argb:C.white }, size:9 }, fill:wf(C.nav), alignment:{ horizontal:'left', vertical:'middle', indent:1 } };
+  ws.getRow(R).height = 22; R++;
+
+  ['Content Area','% Correct','Performance'].forEach((h,i) => {
+    ws.getCell(R,i+1).value = h;
+    ws.getCell(R,i+1).style = { font:{ bold:true, color:{ argb:C.white }, size:9 }, fill:wf(C.steel), alignment:{ horizontal:i===0?'left':'center', vertical:'middle', indent:i===0?1:0 } };
+  });
+  ws.getRow(R).height = 18; R++;
+
+  for (const [sec, mp] of Object.entries(modPerf)) {
+    const { bg, tx } = perfFill(mp.p);
+    ws.getCell(R,1).value = sec || 'Uncategorized';
+    ws.getCell(R,1).style = { font:{ size:9 }, fill:wf(bg), alignment:{ vertical:'middle', indent:1 } };
+    ws.getCell(R,2).value = pct(mp.p);
+    ws.getCell(R,2).style = { font:{ bold:true, size:9, color:{ argb:tx } }, fill:wf(bg), alignment:{ horizontal:'center', vertical:'middle' } };
+    ws.getCell(R,3).value = perfLabel(mp.p);
+    ws.getCell(R,3).style = { font:{ bold:mp.p<0.80, size:9, color:{ argb:tx } }, fill:wf(bg), alignment:{ horizontal:'center', vertical:'middle' } };
+    ws.getRow(R).height = 18; R++;
   }
+
+  // ── NGEN Question Performance Summary ── (exclude MC and bonus)
+  const qtypeNames = { 'M-S':'Multi-Select (SATA)', 'MAT':'Matching', 'FIB':'Fill in the Blank', 'ORD':'Ordering' };
   const qtypeStats = {};
   Object.values(student.items).forEach(si => {
-    if (si.qtype==='MC') return;
-    if (!qtypeStats[si.qtype]) qtypeStats[si.qtype]={total:0,incorrect:0};
+    if (si.qtype === 'MC' || si.isBonus) return;
+    if (!qtypeStats[si.qtype]) qtypeStats[si.qtype] = { total:0, correct:0 };
     qtypeStats[si.qtype].total++;
-    if (!(si.outOf>0&&(si.score/si.outOf)>=0.99)) qtypeStats[si.qtype].incorrect++;
+    if (si.outOf > 0 && (si.score/si.outOf) >= 0.99) qtypeStats[si.qtype].correct++;
   });
+
   if (Object.keys(qtypeStats).length > 0) {
-    mRow++;
-    ws.mergeCells('A'+mRow+':E'+mRow); ws.getCell('A'+mRow).value='QUESTION TYPE PERFORMANCE (Non-Multiple Choice)';
-    ws.getCell('A'+mRow).style={font:{bold:true,color:{argb:C.white},size:9},fill:wf(C.nav),alignment:{horizontal:'left',vertical:'middle'}}; ws.getRow(mRow).height=22; mRow++;
-    const qthRow=ws.getRow(mRow); qthRow.height=20;
-    ['Question Type','Total','Incorrect/Partial','Error Rate','Assessment'].forEach((h,i)=>{ qthRow.getCell(i+1).value=h; qthRow.getCell(i+1).style={font:{bold:true,color:{argb:C.white},size:9},fill:wf(C.steel),alignment:{horizontal:'center',vertical:'middle'}}; }); mRow++;
-    const qtypeNames={'M-S':'Multi-Select (SATA)','MAT':'Matching','FIB':'Fill in the Blank','ORD':'Ordering'};
-    let hasFlags=false;
-    for (const [qt,v] of Object.entries(qtypeStats)) {
-      const rate=v.incorrect/v.total; const isFlagged=rate>0.25; if(isFlagged) hasFlags=true;
-      const bg=isFlagged?C.lightOrange:C.offwhite; const row=ws.getRow(mRow); row.height=20;
-      row.getCell(1).value=qtypeNames[qt]||qt; row.getCell(1).style={font:{size:9},fill:wf(bg),alignment:{vertical:'middle'}};
-      row.getCell(2).value=v.total; row.getCell(2).style={font:{size:9},fill:wf(bg),alignment:{horizontal:'center',vertical:'middle'}};
-      row.getCell(3).value=v.incorrect; row.getCell(3).style={font:{size:9},fill:wf(bg),alignment:{horizontal:'center',vertical:'middle'}};
-      row.getCell(4).value=pct(rate); row.getCell(4).style={font:{bold:isFlagged,size:9,color:{argb:isFlagged?C.orange:C.steel}},fill:wf(bg),alignment:{horizontal:'center',vertical:'middle'}};
-      row.getCell(5).value=isFlagged?'Area for Improvement':''; row.getCell(5).style={font:{bold:isFlagged,size:9,color:{argb:C.orange}},fill:wf(bg),alignment:{vertical:'middle'}};
-      mRow++;
+    ws.getRow(R).height = 8; R++;
+
+    merge(R);
+    ws.getCell(`A${R}`).value = 'NGEN QUESTION PERFORMANCE SUMMARY';
+    ws.getCell(`A${R}`).style = { font:{ bold:true, color:{ argb:C.white }, size:9 }, fill:wf(C.nav), alignment:{ horizontal:'left', vertical:'middle', indent:1 } };
+    ws.getRow(R).height = 22; R++;
+
+    ['Question Type','% Correct','Performance'].forEach((h,i) => {
+      ws.getCell(R,i+1).value = h;
+      ws.getCell(R,i+1).style = { font:{ bold:true, color:{ argb:C.white }, size:9 }, fill:wf(C.steel), alignment:{ horizontal:i===0?'left':'center', vertical:'middle', indent:i===0?1:0 } };
+    });
+    ws.getRow(R).height = 18; R++;
+
+    for (const [qt, v] of Object.entries(qtypeStats)) {
+      const p = v.total > 0 ? v.correct/v.total : 0;
+      const { bg, tx } = perfFill(p);
+      ws.getCell(R,1).value = qtypeNames[qt] || qt;
+      ws.getCell(R,1).style = { font:{ size:9 }, fill:wf(bg), alignment:{ vertical:'middle', indent:1 } };
+      ws.getCell(R,2).value = pct(p);
+      ws.getCell(R,2).style = { font:{ bold:true, size:9, color:{ argb:tx } }, fill:wf(bg), alignment:{ horizontal:'center', vertical:'middle' } };
+      ws.getCell(R,3).value = perfLabel(p);
+      ws.getCell(R,3).style = { font:{ bold:p<0.80, size:9, color:{ argb:tx } }, fill:wf(bg), alignment:{ horizontal:'center', vertical:'middle' } };
+      ws.getRow(R).height = 18; R++;
     }
-    if (hasFlags) {
-      mRow++; ws.mergeCells('A'+mRow+':E'+mRow);
-      ws.getCell('A'+mRow).value='NOTE: For multi-select, matching, and fill-in-the-blank questions, partial credit responses are counted as incorrect in this summary. This does not mean the entire question was wrong. Review these question types as part of your exam preparation.';
-      ws.getCell('A'+mRow).style={font:{italic:true,size:8,color:{argb:C.steel}},fill:wf('FFFFF8E1'),alignment:{horizontal:'left',vertical:'middle',wrapText:true}}; ws.getRow(mRow).height=52; mRow++;
-    }
+
+    merge(R);
+    ws.getCell(`A${R}`).value = 'NOTE: Multi-select (SATA), matching, fill-in-the-blank, and ordering questions require application of content knowledge in specialized formats. Review these question types as part of your exam preparation.';
+    ws.getCell(`A${R}`).style = { font:{ italic:true, size:8, color:{ argb:C.steel } }, fill:wf(C.yellow), alignment:{ horizontal:'left', vertical:'middle', wrapText:true, indent:1 } };
+    ws.getRow(R).height = 44; R++;
   }
-  mRow++;
-  ws.mergeCells('A'+mRow+':E'+mRow); ws.getCell('A'+mRow).value='QUESTION TOPICS FOR REVIEW';
-  ws.getCell('A'+mRow).style={font:{bold:true,color:{argb:C.white},size:9},fill:wf(C.nav),alignment:{horizontal:'left',vertical:'middle'}}; ws.getRow(mRow).height=22; mRow++;
-  ws.mergeCells('A'+mRow+':E'+mRow); ws.getCell('A'+mRow).value='Question titles are content identifiers only. No exam questions, stems, answer choices, or correct answers are included.';
-  ws.getCell('A'+mRow).style={font:{italic:true,size:8,color:{argb:C.steel}},fill:wf(C.offwhite),alignment:{horizontal:'left',vertical:'middle',wrapText:true}}; ws.getRow(mRow).height=36; mRow++;
-  const ihRow=ws.getRow(mRow); ihRow.height=20;
-  ['#','Question Topic / Title','Type','Module/Content Area'].forEach((h,i)=>{ ihRow.getCell(i+1).value=h; ihRow.getCell(i+1).style={font:{bold:true,color:{argb:C.white},size:9},fill:wf(C.navDark),alignment:{horizontal:'center',vertical:'middle'}}; }); mRow++;
-  const missedItems=Object.values(student.items).filter(si=>!(si.outOf>0&&(si.score/si.outOf)>=0.99));
-  if (missedItems.length===0) {
-    ws.mergeCells('A'+mRow+':E'+mRow); ws.getCell('A'+mRow).value='All questions answered correctly.';
-    ws.getCell('A'+mRow).style={font:{italic:true,size:9,color:{argb:C.green}},fill:wf(C.lightGreen),alignment:{horizontal:'left',vertical:'middle'}}; ws.getRow(mRow).height=22; mRow++;
+
+  // ── Content Topics for Review ── (exclude bonus; bulleted list)
+  ws.getRow(R).height = 8; R++;
+
+  merge(R);
+  ws.getCell(`A${R}`).value = 'CONTENT TOPICS FOR REVIEW';
+  ws.getCell(`A${R}`).style = { font:{ bold:true, color:{ argb:C.white }, size:9 }, fill:wf(C.nav), alignment:{ horizontal:'left', vertical:'middle', indent:1 } };
+  ws.getRow(R).height = 22; R++;
+
+  merge(R);
+  ws.getCell(`A${R}`).value = 'The following is a general list of identified topic areas correlated with lower exam performance. These represent areas where additional review and study may support your course success.';
+  ws.getCell(`A${R}`).style = { font:{ italic:true, size:8, color:{ argb:C.steel } }, fill:wf(C.offwhite), alignment:{ horizontal:'left', vertical:'middle', wrapText:true, indent:1 } };
+  ws.getRow(R).height = 40; R++;
+
+  const missedItems = Object.values(student.items).filter(si => !si.isBonus && !(si.outOf>0 && (si.score/si.outOf)>=0.99));
+  if (missedItems.length === 0) {
+    merge(R);
+    ws.getCell(`A${R}`).value = '✓  All topics addressed successfully — no areas identified for review.';
+    ws.getCell(`A${R}`).style = { font:{ italic:true, size:9, color:{ argb:C.green } }, fill:wf(C.lgGreen), alignment:{ vertical:'middle', indent:1 } };
+    ws.getRow(R).height = 22; R++;
   } else {
-    missedItems.forEach((si,i)=>{ const bg=i%2===0?C.offwhite:'FFFFFFFF'; const row=ws.getRow(mRow); row.height=20;
-      row.getCell(1).value=i+1; row.getCell(1).style={font:{size:9},fill:wf(bg),alignment:{horizontal:'center',vertical:'middle'}};
-      row.getCell(2).value=si.qtitle||('Question '+si.qnum); row.getCell(2).style={font:{size:9},fill:wf(bg),alignment:{vertical:'middle'}};
-      row.getCell(3).value=si.qtype||''; row.getCell(3).style={font:{size:9},fill:wf(bg),alignment:{horizontal:'center',vertical:'middle'}};
-      row.getCell(4).value=si.section||'Uncategorized'; row.getCell(4).style={font:{size:9},fill:wf(bg),alignment:{vertical:'middle'}}; mRow++; });
+    missedItems.forEach((si, i) => {
+      merge(R);
+      ws.getCell(`A${R}`).value = '•  ' + (si.qtitle || ('Question ' + si.qnum));
+      ws.getCell(`A${R}`).style = { font:{ size:9 }, fill:wf(i%2===0 ? C.offwhite : C.white), alignment:{ vertical:'middle', indent:2 } };
+      ws.getRow(R).height = 18; R++;
+    });
   }
-  mRow++; ws.mergeCells('A'+mRow+':E'+mRow);
-  ws.getCell('A'+mRow).value='Generated by NIARA (Nursing Item Analysis & Reporting Assistant) · GrangeRN · For academic support purposes only.';
-  ws.getCell('A'+mRow).style={font:{italic:true,size:8,color:{argb:C.steel}},fill:wf(C.offwhite),alignment:{horizontal:'left',vertical:'middle'}}; ws.getRow(mRow).height=18;
-  ws.columns=[{width:6},{width:52},{width:18},{width:28},{width:20}];
-  const safeLast=student.lname.replace(/[^a-zA-Z]/g,''); const safeFirst=student.fname.replace(/[^a-zA-Z]/g,''); const safeExam=meta.examName.replace(/[^a-zA-Z0-9]/g,'');
-  const fileName=safeLast+'_'+safeFirst+'_NURS'+meta.course+'_'+safeExam+'_'+meta.semester+meta.year+'.xlsx';
-  const buf=await wb.xlsx.writeBuffer();
-  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=fileName; a.click(); URL.revokeObjectURL(url);
+
+  // ── Spacer ──
+  ws.getRow(R).height = 8; R++;
+
+  // ── Footer ──
+  merge(R);
+  ws.getCell(`A${R}`).value = 'Generated by NIARA (Nursing Item Analysis & Reporting Assistant) · GrangeRN · For remediation and academic support purposes only.';
+  ws.getCell(`A${R}`).style = { font:{ italic:true, size:8, color:{ argb:C.steel } }, fill:wf(C.offwhite), alignment:{ horizontal:'left', vertical:'middle', indent:1 } };
+  ws.getRow(R).height = 18;
+
+  // ── Download ──
+  const safeLast  = student.lname.replace(/[^a-zA-Z]/g,'');
+  const safeFirst = student.fname.replace(/[^a-zA-Z]/g,'');
+  const safeExam  = meta.examName.replace(/[^a-zA-Z0-9]/g,'');
+  const fileName  = safeLast+'_'+safeFirst+'_NURS'+meta.course+'_'+safeExam+'_'+meta.semester+meta.year+'.xlsx';
+  const buf  = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = fileName; a.click();
+  URL.revokeObjectURL(url);
 }
 
 
