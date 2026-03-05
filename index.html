@@ -192,9 +192,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     align-items: center;
     gap: 14px;
   }
-  .card-longitudinal .card-header {
-    background: #2d6a4f;
-  }
   .step-number {
     width: 28px; height: 28px;
     border-radius: 50%;
@@ -1465,7 +1462,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       <div class="step-number">2</div>
       <div>
         <h2>Single Exam Report</h2>
-        <p style="font-family:'Source Sans 3',sans-serif;font-weight:400;font-size:0.82rem;opacity:0.8;margin:2px 0 0;">Upload the Exam/Quiz Attempt Details CSV file</p>
+        <p style="font-family:'Source Sans 3',sans-serif;font-weight:400;font-size:0.82rem;color:rgba(255,255,255,0.8);margin:2px 0 0;">Upload the Exam/Quiz Attempt Details CSV file</p>
       </div>
     </div>
     <div class="card-body">
@@ -4112,10 +4109,11 @@ function generateChartImage(type, data, width, height) {
   } else if (type === 'moduleBar' || type === 'ngenBar') {
     drawBg();
     drawTitle(type==='moduleBar' ? 'Module / Content Area Performance' : 'NGEN Question Type Performance');
-    const entries = data.entries || []; // [{label, pct}]
+    const entries = data.entries || [];
     const n = entries.length || 1;
+    const legH = 28; // reserved height for legend at bottom
     const chartLeft = pad.left, chartRight = W - pad.right;
-    const chartTop = 34, chartBottom = H - pad.bottom;
+    const chartTop = 34, chartBottom = H - pad.bottom - legH;
     const totalH = chartBottom - chartTop;
     const barH = Math.min(28, Math.max(14, (totalH / n) - 8));
     const gap   = Math.max(4, (totalH - barH*n) / (n+1));
@@ -4126,25 +4124,26 @@ function generateChartImage(type, data, width, height) {
       const color = e.pct >= 0.90 ? '#1b7a3e' : e.pct >= 0.80 ? '#d4620a' : '#7b1a2a';
       ctx.fillStyle = color;
       ctx.fillRect(chartLeft, y, bw, barH);
-      // label
       ctx.fillStyle = '#1e3a6e';
       ctx.font = '10px sans-serif';
       ctx.textAlign = 'right';
       const shortened = truncLabel(e.label, chartLeft - 12);
       ctx.fillText(shortened, chartLeft - 8, y + barH/2 + 4);
-      // pct label right of bar
       ctx.fillStyle = '#333';
       ctx.font = '10px sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText(Math.round(e.pct*100)+'%', chartLeft+bw+5, y+barH/2+4);
     });
-    // legend
-    const legY = chartBottom + 20;
+    // Separator line above legend
+    const legY = H - legH + 4;
+    ctx.strokeStyle = '#e0e0e0';
+    ctx.beginPath(); ctx.moveTo(chartLeft, legY - 6); ctx.lineTo(chartRight, legY - 6); ctx.stroke();
+    // Legend below separator
     [['≥90% Strong','#1b7a3e'],['80–90% Acceptable','#d4620a'],['<80% Needs Improvement','#7b1a2a']].forEach(([lbl,col],i) => {
-      const lx = chartLeft + i*170;
-      ctx.fillStyle = col; ctx.fillRect(lx, legY-10, 12, 12);
+      const lx = chartLeft + i*160;
+      ctx.fillStyle = col; ctx.fillRect(lx, legY, 10, 10);
       ctx.fillStyle = '#333'; ctx.font = '9px sans-serif'; ctx.textAlign = 'left';
-      ctx.fillText(lbl, lx+16, legY);
+      ctx.fillText(lbl, lx+14, legY+9);
     });
   }
 
@@ -4661,18 +4660,19 @@ async function buildWorkbook(data) {
       KEEP: classStats.flags.KEEP||0,
       REVISE: classStats.flags.REVISE||0,
       RETIRE: classStats.flags.RETIRE||0,
-    }, 480, 180);
+    }, 520, 180);
     const flagImgId = wb.addImage({ base64: flagChartB64, extension: 'png' });
-    ws1.addImage(flagImgId, { tl:{ col:0, row: chartRow-1 }, ext:{ width:480, height:180 } });
-    chartRow += 12; // advance ~12 rows for 180px image
+    ws1.addImage(flagImgId, { tl:{ col:0, row: chartRow-1 }, ext:{ width:520, height:180 } });
+    chartRow += 12; // ~12 rows for 180px image
   } catch(e) { chartRow += 2; }
 
-  // ── Chart 2: Score Distribution ──
+  // ── Chart 2: Score Distribution (below flag chart) ──
   try {
     const scoreArr = totalScores ? Object.values(totalScores).map(s => tp > 0 ? s/tp : 0) : [];
-    const scoreChartB64 = generateChartImage('histogram', { scores: scoreArr }, 480, 180);
+    const scoreChartB64 = generateChartImage('histogram', { scores: scoreArr }, 520, 180);
     const scoreImgId = wb.addImage({ base64: scoreChartB64, extension: 'png' });
-    ws1.addImage(scoreImgId, { tl:{ col:5, row: 10 }, ext:{ width:480, height:180 } });
+    ws1.addImage(scoreImgId, { tl:{ col:0, row: chartRow-1 }, ext:{ width:520, height:180 } });
+    chartRow += 12;
   } catch(e) {}
 
   // ── Pre-grade callout (text row after flag chart) ──
@@ -4868,16 +4868,13 @@ async function buildWorkbook(data) {
   ws2.columns = [
     {width:28},{width:12},{width:50},{width:8},{width:24},
     {width:11},{width:11},{width:11},{width:7},{width:34},
-    {width:65},{width:42},{width:45},{width:14},{width:0}
+    {width:65},{width:42},{width:45},{width:14},{width:2}
   ];
-  // Hide the fingerprint column
-  ws2.getColumn(15).hidden = true;
 
   // ===============================================
   //  TAB 3 — FOR REVIEW (REVISE items, orange)
   // ===============================================
-  const ws3 = wb.addWorksheet('For Review');
-  ws3.properties = { tabColor: { argb: 'FFE65100' } };
+  const ws3 = wb.addWorksheet('For Review', { properties: { tabColor: { argb: 'FFE65100' } } });
   ws3.views = [{ showGridLines: false }];
 
   ws3.mergeCells('A1:M1');
@@ -4885,13 +4882,13 @@ async function buildWorkbook(data) {
   ws3.getCell('A1').style = { font:{ bold:true, color:{ argb:C.white }, size:13 }, fill: reviseFill, alignment:{ horizontal:'left', vertical:'middle' } };
   ws3.getRow(1).height = 30;
 
-  // Collapsible instruction block (rows 2-6, outlineLevel:1, hidden by default)
+  // Instruction block (rows 2-6)
   const reviseInstructions = [
-    'WHAT IS THIS SHEET: Items flagged REVISE showed psychometric weakness this semester. They are not urgent — no grade change needed — but should be revised before the next administration.',
-    'WHAT TO DO: Review each item\'s stem, answer choices, and NIARA findings. Select a Faculty Action from the dropdown in column H. Use columns L and M to document proposed wording changes and notes.',
-    'COLUMN GUIDE: A=Type | B=Question Title | C=N | D=Difficulty% | E=Pt-Biserial | F=Disc.Index | G=Module | H=Faculty Action (dropdown) | K=NIARA Note | L=Proposed Revision | M=Faculty Comments',
-    'FACULTY ACTION (col H): Choose from: No Action Taken / Revise Stem / Revise Answer Choice(s) / Rekey / Retire from Bank / Insufficient Data — Monitor Next Semester',
-    'COLOR GUIDE: Dark orange header = item title row | Gray = NIARA notes | Green bg = correct answer | Yellow = write-in fields',
+    'WHAT IS THIS SHEET: Items flagged REVISE showed psychometric weakness this semester. Not urgent — no grade change needed — but revise before the next administration.',
+    'WHAT TO DO: Review each item\'s stem, answer choices, and NIARA findings. Select a Faculty Action from the dropdown in column H. Use columns L and M to document proposed wording changes.',
+    'COLUMN GUIDE: A=Type | B=Question Title | C=N | D=Difficulty% | E=Pt-Biserial | F=Disc.Index | G=Module | H=Faculty Action (dropdown) | K=NIARA Note | L=Proposed Revision | M=Comments',
+    'FACULTY ACTION (col H): No Action Taken / Revise Stem / Revise Answer Choice(s) / Rekey — Correct Answer Changed / Retire from Bank / Insufficient Data — Monitor Next Semester',
+    'COLOR GUIDE: Orange header = item title row | Gray = NIARA notes | Green highlight = correct answer | Yellow = write-in fields',
   ];
   reviseInstructions.forEach((txt, i) => {
     const rn = i+2;
@@ -4899,8 +4896,6 @@ async function buildWorkbook(data) {
     ws3.getCell(rn, 1).value = txt;
     ws3.getCell(rn, 1).style = { font:{ italic:true, size:8, color:{ argb:C.steel } }, fill: wf(C.offwhite), alignment:{ vertical:'middle', wrapText:true, indent:1 } };
     ws3.getRow(rn).height = 18;
-    ws3.getRow(rn).outlineLevel = 1;
-    ws3.getRow(rn).hidden = true;
   });
 
   // Column headers row 7
@@ -4932,8 +4927,7 @@ async function buildWorkbook(data) {
   // ===============================================
   //  TAB 4 — FOR REWRITE (RETIRE items, red)
   // ===============================================
-  const ws4 = wb.addWorksheet('For Rewrite');
-  ws4.properties = { tabColor: { argb: 'FFB71C1C' } };
+  const ws4 = wb.addWorksheet('For Rewrite', { properties: { tabColor: { argb: 'FFB71C1C' } } });
   ws4.views = [{ showGridLines: false }];
 
   ws4.mergeCells('A1:M1');
@@ -4954,8 +4948,6 @@ async function buildWorkbook(data) {
     ws4.getCell(rn, 1).value = txt;
     ws4.getCell(rn, 1).style = { font:{ italic:true, size:8, color:{ argb:C.steel } }, fill: wf(C.offwhite), alignment:{ vertical:'middle', wrapText:true, indent:1 } };
     ws4.getRow(rn).height = 18;
-    ws4.getRow(rn).outlineLevel = 1;
-    ws4.getRow(rn).hidden = true;
   });
 
   ws4.getRow(7).height = 28;
@@ -5168,8 +5160,7 @@ async function buildLongitudinalWorkbook(current, previousArr) {
   ws2.columns = [{width:10},{width:50},{width:8},{width:22},{width:18},{width:11},{width:11},{width:11},{width:11},{width:22},{width:35},{width:38},{width:40}];
 
   // TAB 3 — ACTIVE — FOR REVIEW (REVISE, orange)
-  const ws3 = wb.addWorksheet('Active — For Review');
-  ws3.properties = { tabColor: { argb: 'FFE65100' } };
+  const ws3 = wb.addWorksheet('Active — For Review', { properties: { tabColor: { argb: 'FFE65100' } } });
   ws3.views = [{ showGridLines: false }];
 
   ws3.mergeCells('A1:M1');
@@ -5206,8 +5197,7 @@ async function buildLongitudinalWorkbook(current, previousArr) {
   }
 
   // TAB 4 — ACTIVE — FOR REWRITE (RETIRE, red)
-  const ws4 = wb.addWorksheet('Active — For Rewrite');
-  ws4.properties = { tabColor: { argb: 'FFB71C1C' } };
+  const ws4 = wb.addWorksheet('Active — For Rewrite', { properties: { tabColor: { argb: 'FFB71C1C' } } });
   ws4.views = [{ showGridLines: false }];
 
   ws4.mergeCells('A1:M1');
