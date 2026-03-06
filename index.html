@@ -1031,23 +1031,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   }
 
   /* ── ITEM CART ── */
-  .item-cart-bar {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    background: var(--navy);
-    color: white;
-    padding: 8px 20px;
-    border-radius: 8px;
-    margin-bottom: 12px;
+  .item-cart-controls {
     display: none;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    box-shadow: 0 2px 12px rgba(30,58,110,0.25);
+    gap: 8px;
   }
-  .item-cart-bar.visible { display: flex; }
-  .cart-left { display:flex; align-items:center; gap:12px; }
+  .item-cart-controls.visible { display: flex !important; }
   .item-cart-badge {
     background: var(--flag-retire-bg);
     color: white;
@@ -1956,19 +1945,17 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <h2 style="font-family:'Playfair Display',serif;color:var(--navy);font-size:1.2rem;">Item Analysis</h2>
         <button class="section-close-btn" onclick="switchDashTab('overview')">Back to Overview</button>
       </div>
-      <div class="item-cart-bar" id="itemCartBar">
-        <div class="cart-left">
-          <span class="item-cart-badge" id="itemCartBadge">0</span>
-          <span style="font-size:0.88rem;">items selected</span>
-        </div>
-        <div style="display:flex;gap:8px;">
-          <button class="cart-btn" onclick="clearAllSelections()">Deselect All</button>
-          <button class="cart-btn primary" onclick="openCartModal()">Generate Report</button>
-        </div>
-      </div>
       <div class="module-tabs" id="moduleTabs"></div>
       <div class="flag-filter-row" id="flagFilterRow"></div>
-      <div class="section-title" id="itemTableTitle">All Items</div>
+      <div class="section-title" id="itemTableTitle" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <span id="itemTableLabel">All Items</span>
+        <div class="item-cart-controls" id="itemCartControls" style="display:none;align-items:center;gap:8px;">
+          <span class="item-cart-badge" id="itemCartBadge">0</span>
+          <span style="font-size:0.82rem;">selected</span>
+          <button class="cart-btn" onclick="clearAllSelections()" style="font-size:0.78rem;padding:4px 10px;">Deselect All</button>
+          <button class="cart-btn primary" onclick="openCartModal()" style="font-size:0.78rem;padding:4px 10px;">Generate Report</button>
+        </div>
+      </div>
       <div class="scroll-top-bar" id="scrollTopBar"><div class="scroll-top-bar-inner" id="scrollTopInner"></div></div>
       <div class="table-wrap" id="tableWrap">
         <table id="itemTable">
@@ -3298,10 +3285,10 @@ function toggleSelectAll(cb) {
 }
 function updateCartBadge() {
   const badge = document.getElementById('itemCartBadge');
-  const bar = document.getElementById('itemCartBar');
+  const controls = document.getElementById('itemCartControls');
   const n = selectedItems.size;
   if (badge) badge.textContent = n;
-  if (bar) bar.classList.toggle('visible', n > 0);
+  if (controls) controls.classList.toggle('visible', n > 0);
 }
 function clearAllSelections() {
   selectedItems.clear();
@@ -3321,10 +3308,10 @@ function openCartModal() {
       <p>${selectedItems.size} item(s) selected. Choose what to include:</p>
       <label><input type="checkbox" id="cartOptTitle" checked> Question Title &amp; Flag</label>
       <label><input type="checkbox" id="cartOptStem" checked> Question Stem</label>
-      <label><input type="checkbox" id="cartOptChoices" checked> Answer Choices</label>
+      <label><input type="checkbox" id="cartOptChoices"> Answer Choices</label>
       <label><input type="checkbox" id="cartOptStats" checked> Statistics (Difficulty, PB, DI)</label>
-      <label><input type="checkbox" id="cartOptRec" checked> NIARA Recommendation</label>
-      <label><input type="checkbox" id="cartOptTags" checked> Pre-Grade Tags (AAC/VAK)</label>
+      <label><input type="checkbox" id="cartOptRec"> NIARA Recommendation</label>
+      <label><input type="checkbox" id="cartOptTags"> Pre-Grade Tags (AAC/VAK)</label>
       <div class="cart-modal-actions">
         <button class="btn-cancel" onclick="closeCartModal()">Cancel</button>
         <button class="btn-print" onclick="generateCartReport('print')">Print</button>
@@ -3368,33 +3355,35 @@ function generatePrintReport(opts) {
 <style>
   @page { size: portrait; margin: 0.5in; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 9pt; color: #1e3a6e; line-height: 1.35; }
-  .report-header { background: #1e3a6e; color: white; padding: 10px 16px; margin-bottom: 10px; }
-  .report-header h1 { font-size: 13pt; font-weight: 700; }
-  .report-header p { font-size: 8pt; opacity: 0.8; }
-  .q-block { border: 1px solid #c8d8ec; border-radius: 4px; margin-bottom: 8px; page-break-inside: avoid; overflow: hidden; }
-  .q-title { background: #2c5282; color: white; padding: 5px 10px; font-weight: 700; font-size: 9pt; display: flex; justify-content: space-between; align-items: center; }
-  .q-flag { padding: 2px 8px; border-radius: 3px; font-size: 7pt; font-weight: 700; text-transform: uppercase; }
-  .flag-KEEP { background: #1b7a3e; } .flag-REVISE { background: #d4620a; } .flag-RETIRE { background: #7b1a2a; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 9pt; color: #222; line-height: 1.35; }
+  .report-header { text-align: center; padding: 12px 16px 8px; margin-bottom: 10px; border-bottom: 2px solid #1e3a6e; }
+  .report-header h1 { font-size: 14pt; font-weight: 700; color: #1e3a6e; }
+  .report-header p { font-size: 8.5pt; color: #333; margin-top: 2px; }
+  .q-block { border: 1.5px solid #2c5282; border-radius: 4px; margin-bottom: 8px; page-break-inside: avoid; overflow: hidden; }
+  .q-title { padding: 5px 10px; font-weight: 700; font-size: 9pt; color: #000; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #c8d8ec; background: #f4f7fb; }
+  .q-flag { font-size: 8pt; font-weight: 700; text-transform: uppercase; }
+  .flag-KEEP { color: #1b7a3e; } .flag-REVISE { color: #d4620a; } .flag-RETIRE { color: #7b1a2a; }
   .q-body { padding: 6px 10px; }
-  .q-stem { background: #f4f7fb; padding: 5px 8px; border-radius: 3px; margin-bottom: 5px; font-size: 8.5pt; }
-  .q-stats { display: flex; gap: 12px; font-size: 8pt; color: #4a7ab5; margin-bottom: 5px; flex-wrap: wrap; }
+  .q-stem { background: #fafafa; padding: 5px 8px; border-radius: 3px; margin-bottom: 5px; font-size: 8.5pt; color: #222; }
+  .q-stats { display: flex; gap: 12px; font-size: 8pt; color: #333; margin-bottom: 5px; flex-wrap: wrap; }
   .q-stats span { white-space: nowrap; }
-  .q-stats strong { color: #1e3a6e; }
-  .q-rec { font-style: italic; font-size: 8pt; color: #4a7ab5; margin-bottom: 5px; border-left: 3px solid #c8d8ec; padding-left: 6px; }
+  .q-stats strong { color: #000; }
+  .q-rec { font-style: italic; font-size: 8pt; color: #555; margin-bottom: 5px; border-left: 3px solid #c8d8ec; padding-left: 6px; }
   .q-tags { display: flex; gap: 6px; margin-bottom: 5px; }
   .q-tag { font-size: 7pt; font-weight: 700; padding: 2px 6px; border-radius: 3px; color: white; }
   .tag-vak { background: #c0392b; } .tag-aac { background: #8b0000; }
-  .choice-table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+  .choice-table { width: 100%; border-collapse: collapse; font-size: 8pt; color: #222; }
   .choice-table th { background: #e8edf4; color: #1e3a6e; padding: 3px 6px; text-align: left; font-size: 7.5pt; }
   .choice-table td { padding: 3px 6px; border-bottom: 1px solid #e8edf4; }
-  .choice-correct { background: #e8f5e9; }
-  .security-footer { margin-top: 12px; text-align: center; font-size: 7pt; color: #999; border-top: 1px solid #ddd; padding-top: 6px; }
+  .choice-correct td { color: #15603a; font-weight: 600; }
+  .report-footer { margin-top: 16px; text-align: center; font-size: 7.5pt; color: #666; border-top: 1.5px solid #1e3a6e; padding-top: 8px; }
+  .report-footer .security { margin-bottom: 4px; }
+  .report-footer .branding { color: #1e3a6e; font-weight: 600; }
   @media print { .no-print { display: none; } }
 </style></head><body>
 <div class="report-header">
-  <h1>NIARA — Item Review Report</h1>
-  <p>${esc(meta.examName||'')} | ${esc(meta.courseLabel||'')} | ${esc((meta.semester||'')+' '+(meta.year||''))} | ${selectedArr.length} items</p>
+  <h1>NIARA &mdash; Item Review Report</h1>
+  <p>${esc(meta.examName||'')} &ensp;|&ensp; ${esc(meta.courseLabel||'')} &ensp;|&ensp; ${esc((meta.semester||'')+' '+(meta.year||''))} &ensp;|&ensp; ${selectedArr.length} items</p>
 </div>`;
 
   selectedArr.forEach(item => {
@@ -3440,7 +3429,7 @@ function generatePrintReport(opts) {
           choices.forEach(([ans, count]) => {
             const isC = correctSet.has(ans);
             const rate = item.n > 0 ? Math.round(count/item.n*100) : 0;
-            html += '<tr class="' + (isC?'choice-correct':'') + '"><td>' + (isC?'<strong>':'') + esc(ans) + (isC?' ✓</strong>':'') + '</td><td>' + count + '</td><td>' + rate + '%</td></tr>';
+            html += '<tr' + (isC?' class="choice-correct"':'') + '><td>' + esc(ans) + (isC?' ✓':'') + '</td><td>' + count + '</td><td>' + rate + '%</td></tr>';
           });
           html += '</table>';
         }
@@ -3476,7 +3465,10 @@ function generatePrintReport(opts) {
     html += '</div></div>';
   });
 
-  html += '<div class="security-footer">CONFIDENTIAL — For authorized faculty use only. Maintain test security at all times. NIARA · GrangeRN</div>';
+  html += `<div class="report-footer">
+    <div class="security">This document contains secure examination content. Store in a password-protected, access-controlled location and do not distribute to students or unauthorized individuals. Dispose of printed copies by shredding.</div>
+    <div class="branding">Generated by NIARA &middot; Nursing Item Analysis &amp; Reporting Assistant &middot; GrangeRN</div>
+  </div>`;
   html += '</body></html>';
 
   const win = window.open('', '_blank');
@@ -3687,9 +3679,9 @@ function renderItemTable(moduleFilter) {
     filteredItems.sort((a,b) => (flagOrder[a.flag?.flag]||99) - (flagOrder[b.flag?.flag]||99));
   }
 
-  const filterLabel = activeFlagFilter ? ` [${activeFlagFilter} filter]` : '';
-  document.getElementById('itemTableTitle').textContent =
-    (moduleFilter || 'All Items') + filterLabel + ' (' + filteredItems.length + ' items)';
+  const filterLabel = activeFlagFilter ? ' — ' + activeFlagFilter + ' filter' : '';
+  const labelEl = document.getElementById('itemTableLabel');
+  if (labelEl) labelEl.textContent = (moduleFilter || 'All Items') + filterLabel + ' (' + filteredItems.length + ' items)';
 
   filteredItems.forEach((item, idx) => {
     const mapKey = Object.keys(qtitleMap).length;
@@ -3843,7 +3835,7 @@ function showStudentReport() {
         <span style="font-size:0.68rem;font-weight:400;display:block;text-align:center;margin-top:2px;opacity:0.75;">Initial raw score</span>
       </div>
       <div style="display:flex;gap:8px;">
-        <button onclick="downloadStudentReport('${sid}')" style="font-size:0.78rem;padding:6px 14px;background:var(--navy);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;">⬇ Download Student Report</button>
+        <button onclick="openStudentReportModal('${sid}')" style="font-size:0.78rem;padding:6px 14px;background:var(--navy);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;">⬇ Download Student Report</button>
         <button onclick="closeStudentReport()" style="font-size:0.78rem;padding:6px 14px;background:var(--offwhite);color:var(--navy);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-weight:600;">✕ Close</button>
       </div>
     </div>
@@ -4353,8 +4345,212 @@ function clearAndRestart() {
 // ══════════════════════════════════════════════
 //  STUDENT INDIVIDUAL EXCEL DOWNLOAD
 // ══════════════════════════════════════════════
-async function downloadStudentReport(sid) {
+function openStudentReportModal(sid) {
   if (!parsedData || !sid) return;
+  const student = parsedData.students[sid];
+  if (!student) return;
+
+  // Find missed items for content topics
+  const missedItems = Object.values(student.items).filter(si => !si.isBonus && !(si.outOf>0 && (si.score/si.outOf)>=0.99));
+  const missedBySection = {};
+  missedItems.forEach(si => {
+    if (!missedBySection[si.section]) missedBySection[si.section] = [];
+    missedBySection[si.section].push(si);
+  });
+
+  let topicsHtml = '';
+  if (missedItems.length > 0) {
+    topicsHtml = '<div id="stuTopicsArea" style="display:none;margin-left:24px;margin-top:4px;max-height:200px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:6px;padding:8px;">';
+    for (const [sec, sitems] of Object.entries(missedBySection).sort((a,b) => a[0].localeCompare(b[0]))) {
+      topicsHtml += '<div style="font-weight:600;font-size:0.82rem;color:var(--navy);margin-top:4px;">' + esc(sec) + '</div>';
+      sitems.forEach(si => {
+        const label = si.qtitle || ('Question ' + si.qnum);
+        topicsHtml += '<label style="display:flex;align-items:center;gap:6px;padding:2px 0;font-size:0.8rem;cursor:pointer;"><input type="checkbox" class="stu-topic-cb" data-topic="' + esc(label) + '" checked style="accent-color:var(--navy);"> ' + esc(label) + '</label>';
+      });
+    }
+    topicsHtml += '</div>';
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'cart-modal-overlay';
+  overlay.id = 'stuModalOverlay';
+  overlay.innerHTML = `
+    <div class="cart-modal" style="max-width:520px;">
+      <h3>Student Report Options</h3>
+      <p>Select what to include in ${esc(student.fname)} ${esc(student.lname)}'s report:</p>
+      <label><input type="checkbox" id="stuOptScore"> Raw Score</label>
+      <label><input type="checkbox" id="stuOptModule"> Module / Content Area Performance Summary</label>
+      <label><input type="checkbox" id="stuOptNgen"> NGEN Question Performance Summary</label>
+      <label><input type="checkbox" id="stuOptTopics" onchange="document.getElementById('stuTopicsArea').style.display=this.checked?'block':'none'"> Content Topics for Review</label>
+      ${topicsHtml}
+      <div class="cart-modal-actions">
+        <button class="btn-cancel" onclick="closeStuModal()">Cancel</button>
+        <button class="btn-print" onclick="generateStudentOutput('${sid}','print')">Print</button>
+        <button class="btn-download" onclick="generateStudentOutput('${sid}','excel')">Download Excel</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeStuModal(); });
+}
+function closeStuModal() {
+  const o = document.getElementById('stuModalOverlay');
+  if (o) o.remove();
+}
+function getStuOpts() {
+  const topics = [];
+  document.querySelectorAll('.stu-topic-cb:checked').forEach(cb => topics.push(cb.dataset.topic));
+  return {
+    score: document.getElementById('stuOptScore')?.checked ?? false,
+    module: document.getElementById('stuOptModule')?.checked ?? false,
+    ngen: document.getElementById('stuOptNgen')?.checked ?? false,
+    contentTopics: document.getElementById('stuOptTopics')?.checked ?? false,
+    selectedTopics: topics,
+  };
+}
+function generateStudentOutput(sid, mode) {
+  const opts = getStuOpts();
+  closeStuModal();
+  if (!confirm('REMINDER: Maintain test security at all times. Save this report in a secure, access-controlled location. Do not share with unauthorized individuals.\n\nClick OK to confirm you agree to maintain test security.')) return;
+  if (mode === 'print') generateStudentPrint(sid, opts);
+  else downloadStudentReport(sid, opts);
+}
+
+function generateStudentPrint(sid, opts) {
+  const { students, totalScores, meta, classStats } = parsedData;
+  const student = students[sid];
+  if (!student) return;
+  const tp = classStats.totalPossible || 1;
+  const total = totalScores[sid] || 0;
+
+  // Compute module perf
+  const bySection = {};
+  Object.values(student.items).forEach(si => {
+    if (si.isBonus) return;
+    if (!bySection[si.section]) bySection[si.section] = [];
+    bySection[si.section].push(si);
+  });
+  const modPerf = {};
+  for (const [sec, sitems] of Object.entries(bySection)) {
+    const got = sitems.reduce((s,i) => s+i.score, 0);
+    const pos = sitems.reduce((s,i) => s+i.outOf, 0);
+    modPerf[sec] = { got, pos, p: pos>0 ? got/pos : 0 };
+  }
+
+  // NGEN stats
+  const qtypeNames = { 'M-S':'Multi-Select (SATA)', 'MAT':'Matching', 'FIB':'Fill in the Blank', 'ORD':'Ordering' };
+  const qtypeStats = {};
+  Object.values(student.items).forEach(si => {
+    if (si.qtype === 'MC' || si.isBonus) return;
+    if (!qtypeStats[si.qtype]) qtypeStats[si.qtype] = { total:0, correct:0 };
+    qtypeStats[si.qtype].total++;
+    if (si.outOf > 0 && (si.score/si.outOf) >= 0.99) qtypeStats[si.qtype].correct++;
+  });
+
+  const perfColor = (p) => p > 0.90 ? '#1b7a3e' : p >= 0.80 ? '#1a5276' : '#7b1a2a';
+  const perfBg = (p) => p > 0.90 ? '#e8f5e9' : p >= 0.80 ? '#dce8f8' : '#fce4ec';
+  const perfLbl = (p) => p > 0.90 ? 'Strong' : p >= 0.80 ? 'Acceptable' : 'Needs Improvement';
+
+  let html = `<!DOCTYPE html><html><head><title>Student Report - ${esc(student.lname)}, ${esc(student.fname)}</title>
+<style>
+  @page { size: portrait; margin: 0.5in; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #222; line-height: 1.4; }
+  .header { text-align: center; padding: 14px; border-bottom: 2px solid #1e3a6e; margin-bottom: 12px; }
+  .header h1 { font-size: 14pt; color: #1e3a6e; }
+  .header p { font-size: 9pt; color: #333; }
+  .info-row { display: flex; justify-content: space-between; padding: 4px 8px; font-size: 9pt; }
+  .info-row:nth-child(even) { background: #f4f7fb; }
+  .section-hdr { background: #1e3a6e; color: white; padding: 6px 12px; font-weight: 700; font-size: 10pt; margin-top: 12px; border-radius: 3px 3px 0 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+  th { background: #4a7ab5; color: white; padding: 5px 8px; text-align: left; font-size: 8.5pt; }
+  td { padding: 5px 8px; border-bottom: 1px solid #e8edf4; }
+  .perf-row { font-weight: 600; }
+  .topic-item { padding: 3px 8px 3px 20px; font-size: 9pt; border-bottom: 1px solid #f0f0f0; }
+  .topic-section { font-weight: 700; padding: 6px 8px; background: #f4f7fb; color: #1e3a6e; font-size: 9pt; }
+  .score-box { text-align: center; padding: 10px; margin: 8px 0; border-radius: 6px; font-size: 13pt; font-weight: 700; }
+  .disclaimer { font-size: 7.5pt; color: #666; font-style: italic; padding: 4px 8px; background: #fffde7; margin-bottom: 8px; }
+  .note { font-size: 8pt; color: #555; font-style: italic; padding: 6px 8px; background: #f4f7fb; margin-top: 4px; }
+  .footer { margin-top: 20px; text-align: center; border-top: 1.5px solid #1e3a6e; padding-top: 10px; }
+  .footer .encourage { font-size: 9pt; color: #1e3a6e; font-style: italic; margin-bottom: 6px; }
+  .footer .branding { font-size: 7.5pt; color: #1e3a6e; font-weight: 600; }
+  @media print { .no-print { display: none; } }
+</style></head><body>
+<div class="header">
+  <h1>NIARA &mdash; Student Exam Performance Report</h1>
+  <p>${esc(student.lname)}, ${esc(student.fname)} &ensp;|&ensp; ${esc(meta.courseLabel)} &ensp;|&ensp; ${esc(meta.examName)} &ensp;|&ensp; ${esc(meta.semester)} ${esc(meta.year)}</p>
+</div>`;
+
+  if (opts.score) {
+    const scorePct = tp > 0 ? Math.round(total/tp*100) : 0;
+    const sc = perfColor(total/tp);
+    const sb = perfBg(total/tp);
+    html += `<div class="score-box" style="background:${sb};color:${sc};border:2px solid ${sc};">${Math.round(total*10)/10} / ${tp} &ensp;&middot;&ensp; ${scorePct}%</div>`;
+    html += '<div class="disclaimer">This is the initial raw score from the Brightspace CSV export. It does not reflect grade adjustments, rekeyed items, or changes made after exam analysis. Your official grade is posted in the course LMS.</div>';
+  }
+
+  if (opts.module) {
+    html += '<div class="section-hdr">Module / Content Area Performance</div>';
+    html += '<table><tr><th>Content Area</th><th style="text-align:center;">% Correct</th><th style="text-align:center;">Performance</th></tr>';
+    for (const [sec, mp] of Object.entries(modPerf).sort((a,b) => a[0].localeCompare(b[0]))) {
+      const c = perfColor(mp.p);
+      const bg = perfBg(mp.p);
+      html += '<tr class="perf-row" style="background:' + bg + ';color:' + c + ';"><td>' + esc(sec) + '</td><td style="text-align:center;">' + pct(mp.p) + '</td><td style="text-align:center;">' + perfLbl(mp.p) + '</td></tr>';
+    }
+    html += '</table>';
+  }
+
+  if (opts.ngen && Object.keys(qtypeStats).length > 0) {
+    html += '<div class="section-hdr">NGEN Question Performance</div>';
+    html += '<table><tr><th>Question Type</th><th style="text-align:center;">% Correct</th><th style="text-align:center;">Performance</th></tr>';
+    for (const [qt, v] of Object.entries(qtypeStats)) {
+      const p = v.total > 0 ? v.correct/v.total : 0;
+      const c = perfColor(p);
+      const bg = perfBg(p);
+      html += '<tr class="perf-row" style="background:' + bg + ';color:' + c + ';"><td>' + esc(qtypeNames[qt]||qt) + '</td><td style="text-align:center;">' + pct(p) + '</td><td style="text-align:center;">' + perfLbl(p) + '</td></tr>';
+    }
+    html += '</table>';
+    html += '<div class="note">Multi-select (SATA), matching, fill-in-the-blank, and ordering questions require application of content knowledge in specialized formats. Review these question types as part of your exam preparation.</div>';
+  }
+
+  if (opts.contentTopics) {
+    html += '<div class="section-hdr">Content Topics for Review</div>';
+    html += '<div class="note" style="margin-top:0;">The following content areas were identified as opportunities for growth based on your exam performance. Review your course materials, lecture notes, and assigned readings covering these topics to strengthen your understanding.</div>';
+    if (opts.selectedTopics.length === 0) {
+      html += '<div style="padding:8px;color:#1b7a3e;font-style:italic;">All topics addressed successfully — no areas identified for review.</div>';
+    } else {
+      // Group selected topics by section
+      const missedItems = Object.values(student.items).filter(si => !si.isBonus && !(si.outOf>0 && (si.score/si.outOf)>=0.99));
+      const byS = {};
+      missedItems.forEach(si => {
+        const label = si.qtitle || ('Question ' + si.qnum);
+        if (opts.selectedTopics.includes(label)) {
+          if (!byS[si.section]) byS[si.section] = [];
+          byS[si.section].push(label);
+        }
+      });
+      for (const [sec, topics] of Object.entries(byS).sort((a,b) => a[0].localeCompare(b[0]))) {
+        html += '<div class="topic-section">' + esc(sec) + '</div>';
+        topics.forEach(t => { html += '<div class="topic-item">&bull; ' + esc(t) + '</div>'; });
+      }
+    }
+  }
+
+  html += `<div class="footer">
+    <div class="encourage">Every step forward in your education brings you closer to the nurse you are meant to be. Stay committed, keep learning, and trust the process &mdash; your dedication today is shaping the compassionate, skilled professional you will become.</div>
+    <div class="branding">Generated by NIARA &middot; Nursing Item Analysis &amp; Reporting Assistant &middot; GrangeRN</div>
+  </div>`;
+  html += '</body></html>';
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => win.print(), 400);
+}
+
+async function downloadStudentReport(sid, opts) {
+  if (!parsedData || !sid) return;
+  if (!opts) opts = { score:true, module:true, ngen:true, contentTopics:true, selectedTopics:null };
   const { students, classStats, totalScores, meta } = parsedData;
   const student = students[sid];
   if (!student) return;
@@ -4374,13 +4570,11 @@ async function downloadStudentReport(sid) {
 
   const ws = wb.addWorksheet('Student Report');
   ws.views = [{ showGridLines: false }];
-  // 3-column layout: Label (wide) | Value/% (medium) | Performance (medium)
   ws.columns = [{ width:50 }, { width:16 }, { width:24 }];
 
   let R = 1;
   function merge(r) { ws.mergeCells(`A${r}:C${r}`); }
 
-  // Performance helpers — >90 Strong, >=80 Acceptable, <80 Needs Improvement
   function perfLabel(p) {
     if (p > 0.90) return 'Strong';
     if (p >= 0.80) return 'Acceptable';
@@ -4392,22 +4586,20 @@ async function downloadStudentReport(sid) {
     return            { bg:C.lgRed,   tx:C.red   };
   }
 
-  // ── Row 1: Title banner ──
+  // ── Title banner ──
   merge(R);
   ws.getCell(`A${R}`).value = 'NIARA — Student Exam Performance Report';
   ws.getCell(`A${R}`).style = { font:{ bold:true, color:{ argb:C.white }, size:16, name:'Calibri' }, fill:wf(C.nav), alignment:{ horizontal:'left', vertical:'middle', indent:1 } };
   ws.getRow(R).height = 36; R++;
 
-  // ── Row 2: Subtitle ──
   merge(R);
   ws.getCell(`A${R}`).value = 'Nursing Item Analysis & Reporting Assistant · For remediation guidance only';
   ws.getCell(`A${R}`).style = { font:{ italic:true, color:{ argb:C.powder }, size:8 }, fill:wf(C.navDark), alignment:{ horizontal:'left', vertical:'middle', indent:1 } };
   ws.getRow(R).height = 16; R++;
 
-  // ── Spacer ──
   ws.getRow(R).height = 8; R++;
 
-  // ── Student Information header ──
+  // ── Student Information ──
   merge(R);
   ws.getCell(`A${R}`).value = 'STUDENT INFORMATION';
   ws.getCell(`A${R}`).style = { font:{ bold:true, color:{ argb:C.white }, size:9 }, fill:wf(C.navDark), alignment:{ horizontal:'left', vertical:'middle', indent:1 } };
@@ -4422,26 +4614,23 @@ async function downloadStudentReport(sid) {
     ws.getRow(R).height = 18; R++;
   });
 
-  // ── Spacer ──
   ws.getRow(R).height = 8; R++;
 
-  // ── Exam Score ──
-  const studentTotal = Math.round((totalScores[sid] || 0) * 10) / 10;
-  merge(R);
-  ws.getCell(`A${R}`).value = 'Exam Score (Raw):   ' + studentTotal;
-  ws.getCell(`A${R}`).style = { font:{ bold:true, size:14, color:{ argb:C.nav }, name:'Calibri' }, fill:wf(C.lgBlue), alignment:{ horizontal:'center', vertical:'middle' } };
-  ws.getRow(R).height = 30; R++;
+  if (opts.score) {
+    const studentTotal = Math.round((totalScores[sid] || 0) * 10) / 10;
+    merge(R);
+    ws.getCell(`A${R}`).value = 'Exam Score (Raw):   ' + studentTotal;
+    ws.getCell(`A${R}`).style = { font:{ bold:true, size:14, color:{ argb:C.nav }, name:'Calibri' }, fill:wf(C.lgBlue), alignment:{ horizontal:'center', vertical:'middle' } };
+    ws.getRow(R).height = 30; R++;
 
-  // ── Score disclaimer ──
-  merge(R);
-  ws.getCell(`A${R}`).value = 'This is the initial raw score from the Brightspace CSV export and includes any bonus points earned. It does not reflect grade adjustments, rekeyed items, or other changes made by the instructor after exam analysis. Your official grade is posted in the course LMS.';
-  ws.getCell(`A${R}`).style = { font:{ italic:true, size:8, color:{ argb:C.steel } }, fill:wf(C.yellow), alignment:{ horizontal:'left', vertical:'middle', wrapText:true, indent:1 } };
-  ws.getRow(R).height = 48; R++;
+    merge(R);
+    ws.getCell(`A${R}`).value = 'This is the initial raw score from the Brightspace CSV export and includes any bonus points earned. It does not reflect grade adjustments, rekeyed items, or other changes made by the instructor after exam analysis. Your official grade is posted in the course LMS.';
+    ws.getCell(`A${R}`).style = { font:{ italic:true, size:8, color:{ argb:C.steel } }, fill:wf(C.yellow), alignment:{ horizontal:'left', vertical:'middle', wrapText:true, indent:1 } };
+    ws.getRow(R).height = 48; R++;
+    ws.getRow(R).height = 8; R++;
+  }
 
-  // ── Spacer ──
-  ws.getRow(R).height = 8; R++;
-
-  // ── Module / Content Area Performance ── (exclude bonus)
+  // Compute data needed for module/topics
   const bySection = {};
   Object.values(student.items).forEach(si => {
     if (si.isBonus) return;
@@ -4455,105 +4644,130 @@ async function downloadStudentReport(sid) {
     modPerf[sec] = { got, pos, p: pos>0 ? got/pos : 0 };
   }
 
-  merge(R);
-  ws.getCell(`A${R}`).value = 'MODULE / CONTENT AREA PERFORMANCE SUMMARY';
-  ws.getCell(`A${R}`).style = { font:{ bold:true, color:{ argb:C.white }, size:9 }, fill:wf(C.nav), alignment:{ horizontal:'left', vertical:'middle', indent:1 } };
-  ws.getRow(R).height = 22; R++;
-
-  ['Content Area','% Correct','Performance'].forEach((h,i) => {
-    ws.getCell(R,i+1).value = h;
-    ws.getCell(R,i+1).style = { font:{ bold:true, color:{ argb:C.white }, size:9 }, fill:wf(C.steel), alignment:{ horizontal:i===0?'left':'center', vertical:'middle', indent:i===0?1:0 } };
-  });
-  ws.getRow(R).height = 18; R++;
-
-  for (const [sec, mp] of Object.entries(modPerf).sort((a,b) => a[0].localeCompare(b[0]))) {
-    const { bg, tx } = perfFill(mp.p);
-    ws.getCell(R,1).value = sec || 'Uncategorized';
-    ws.getCell(R,1).style = { font:{ size:9 }, fill:wf(bg), alignment:{ vertical:'middle', indent:1 } };
-    ws.getCell(R,2).value = pct(mp.p);
-    ws.getCell(R,2).style = { font:{ bold:true, size:9, color:{ argb:tx } }, fill:wf(bg), alignment:{ horizontal:'center', vertical:'middle' } };
-    ws.getCell(R,3).value = perfLabel(mp.p);
-    ws.getCell(R,3).style = { font:{ bold:mp.p<0.80, size:9, color:{ argb:tx } }, fill:wf(bg), alignment:{ horizontal:'center', vertical:'middle' } };
-    ws.getRow(R).height = 18; R++;
-  }
-
-  // ── NGEN Question Performance Summary ── (exclude MC and bonus)
-  const qtypeNames = { 'M-S':'Multi-Select (SATA)', 'MAT':'Matching', 'FIB':'Fill in the Blank', 'ORD':'Ordering' };
-  const qtypeStats = {};
-  Object.values(student.items).forEach(si => {
-    if (si.qtype === 'MC' || si.isBonus) return;
-    if (!qtypeStats[si.qtype]) qtypeStats[si.qtype] = { total:0, correct:0 };
-    qtypeStats[si.qtype].total++;
-    if (si.outOf > 0 && (si.score/si.outOf) >= 0.99) qtypeStats[si.qtype].correct++;
-  });
-
-  if (Object.keys(qtypeStats).length > 0) {
-    ws.getRow(R).height = 8; R++;
-
+  if (opts.module) {
     merge(R);
-    ws.getCell(`A${R}`).value = 'NGEN QUESTION PERFORMANCE SUMMARY';
+    ws.getCell(`A${R}`).value = 'MODULE / CONTENT AREA PERFORMANCE SUMMARY';
     ws.getCell(`A${R}`).style = { font:{ bold:true, color:{ argb:C.white }, size:9 }, fill:wf(C.nav), alignment:{ horizontal:'left', vertical:'middle', indent:1 } };
     ws.getRow(R).height = 22; R++;
 
-    ['Question Type','% Correct','Performance'].forEach((h,i) => {
+    ['Content Area','% Correct','Performance'].forEach((h,i) => {
       ws.getCell(R,i+1).value = h;
       ws.getCell(R,i+1).style = { font:{ bold:true, color:{ argb:C.white }, size:9 }, fill:wf(C.steel), alignment:{ horizontal:i===0?'left':'center', vertical:'middle', indent:i===0?1:0 } };
     });
     ws.getRow(R).height = 18; R++;
 
-    for (const [qt, v] of Object.entries(qtypeStats)) {
-      const p = v.total > 0 ? v.correct/v.total : 0;
-      const { bg, tx } = perfFill(p);
-      ws.getCell(R,1).value = qtypeNames[qt] || qt;
+    for (const [sec, mp] of Object.entries(modPerf).sort((a,b) => a[0].localeCompare(b[0]))) {
+      const { bg, tx } = perfFill(mp.p);
+      ws.getCell(R,1).value = sec || 'Uncategorized';
       ws.getCell(R,1).style = { font:{ size:9 }, fill:wf(bg), alignment:{ vertical:'middle', indent:1 } };
-      ws.getCell(R,2).value = pct(p);
+      ws.getCell(R,2).value = pct(mp.p);
       ws.getCell(R,2).style = { font:{ bold:true, size:9, color:{ argb:tx } }, fill:wf(bg), alignment:{ horizontal:'center', vertical:'middle' } };
-      ws.getCell(R,3).value = perfLabel(p);
-      ws.getCell(R,3).style = { font:{ bold:p<0.80, size:9, color:{ argb:tx } }, fill:wf(bg), alignment:{ horizontal:'center', vertical:'middle' } };
+      ws.getCell(R,3).value = perfLabel(mp.p);
+      ws.getCell(R,3).style = { font:{ bold:mp.p<0.80, size:9, color:{ argb:tx } }, fill:wf(bg), alignment:{ horizontal:'center', vertical:'middle' } };
       ws.getRow(R).height = 18; R++;
     }
-
-    merge(R);
-    ws.getCell(`A${R}`).value = 'NOTE: Multi-select (SATA), matching, fill-in-the-blank, and ordering questions require application of content knowledge in specialized formats. Review these question types as part of your exam preparation.';
-    ws.getCell(`A${R}`).style = { font:{ italic:true, size:8, color:{ argb:C.steel } }, fill:wf(C.yellow), alignment:{ horizontal:'left', vertical:'middle', wrapText:true, indent:1 } };
-    ws.getRow(R).height = 44; R++;
   }
 
-  // ── Content Topics for Review ── (exclude bonus; bulleted list)
-  ws.getRow(R).height = 8; R++;
-
-  merge(R);
-  ws.getCell(`A${R}`).value = 'CONTENT TOPICS FOR REVIEW';
-  ws.getCell(`A${R}`).style = { font:{ bold:true, color:{ argb:C.white }, size:9 }, fill:wf(C.nav), alignment:{ horizontal:'left', vertical:'middle', indent:1 } };
-  ws.getRow(R).height = 22; R++;
-
-  merge(R);
-  ws.getCell(`A${R}`).value = 'The following is a general list of identified topic areas correlated with lower exam performance. These represent areas where additional review and study may support your course success.';
-  ws.getCell(`A${R}`).style = { font:{ italic:true, size:8, color:{ argb:C.steel } }, fill:wf(C.offwhite), alignment:{ horizontal:'left', vertical:'middle', wrapText:true, indent:1 } };
-  ws.getRow(R).height = 40; R++;
-
-  const missedItems = Object.values(student.items).filter(si => !si.isBonus && !(si.outOf>0 && (si.score/si.outOf)>=0.99));
-  if (missedItems.length === 0) {
-    merge(R);
-    ws.getCell(`A${R}`).value = '✓  All topics addressed successfully — no areas identified for review.';
-    ws.getCell(`A${R}`).style = { font:{ italic:true, size:9, color:{ argb:C.green } }, fill:wf(C.lgGreen), alignment:{ vertical:'middle', indent:1 } };
-    ws.getRow(R).height = 22; R++;
-  } else {
-    missedItems.forEach((si, i) => {
-      merge(R);
-      ws.getCell(`A${R}`).value = '•  ' + (si.qtitle || ('Question ' + si.qnum));
-      ws.getCell(`A${R}`).style = { font:{ size:9 }, fill:wf(i%2===0 ? C.offwhite : C.white), alignment:{ vertical:'middle', indent:2 } };
-      ws.getRow(R).height = 18; R++;
+  if (opts.ngen) {
+    const qtypeNames = { 'M-S':'Multi-Select (SATA)', 'MAT':'Matching', 'FIB':'Fill in the Blank', 'ORD':'Ordering' };
+    const qtypeStats = {};
+    Object.values(student.items).forEach(si => {
+      if (si.qtype === 'MC' || si.isBonus) return;
+      if (!qtypeStats[si.qtype]) qtypeStats[si.qtype] = { total:0, correct:0 };
+      qtypeStats[si.qtype].total++;
+      if (si.outOf > 0 && (si.score/si.outOf) >= 0.99) qtypeStats[si.qtype].correct++;
     });
+
+    if (Object.keys(qtypeStats).length > 0) {
+      ws.getRow(R).height = 8; R++;
+      merge(R);
+      ws.getCell(`A${R}`).value = 'NGEN QUESTION PERFORMANCE SUMMARY';
+      ws.getCell(`A${R}`).style = { font:{ bold:true, color:{ argb:C.white }, size:9 }, fill:wf(C.nav), alignment:{ horizontal:'left', vertical:'middle', indent:1 } };
+      ws.getRow(R).height = 22; R++;
+
+      ['Question Type','% Correct','Performance'].forEach((h,i) => {
+        ws.getCell(R,i+1).value = h;
+        ws.getCell(R,i+1).style = { font:{ bold:true, color:{ argb:C.white }, size:9 }, fill:wf(C.steel), alignment:{ horizontal:i===0?'left':'center', vertical:'middle', indent:i===0?1:0 } };
+      });
+      ws.getRow(R).height = 18; R++;
+
+      for (const [qt, v] of Object.entries(qtypeStats)) {
+        const p = v.total > 0 ? v.correct/v.total : 0;
+        const { bg, tx } = perfFill(p);
+        ws.getCell(R,1).value = qtypeNames[qt] || qt;
+        ws.getCell(R,1).style = { font:{ size:9 }, fill:wf(bg), alignment:{ vertical:'middle', indent:1 } };
+        ws.getCell(R,2).value = pct(p);
+        ws.getCell(R,2).style = { font:{ bold:true, size:9, color:{ argb:tx } }, fill:wf(bg), alignment:{ horizontal:'center', vertical:'middle' } };
+        ws.getCell(R,3).value = perfLabel(p);
+        ws.getCell(R,3).style = { font:{ bold:p<0.80, size:9, color:{ argb:tx } }, fill:wf(bg), alignment:{ horizontal:'center', vertical:'middle' } };
+        ws.getRow(R).height = 18; R++;
+      }
+      merge(R);
+      ws.getCell(`A${R}`).value = 'NOTE: Multi-select (SATA), matching, fill-in-the-blank, and ordering questions require application of content knowledge in specialized formats. Review these question types as part of your exam preparation.';
+      ws.getCell(`A${R}`).style = { font:{ italic:true, size:8, color:{ argb:C.steel } }, fill:wf(C.yellow), alignment:{ horizontal:'left', vertical:'middle', wrapText:true, indent:1 } };
+      ws.getRow(R).height = 44; R++;
+    }
+  }
+
+  if (opts.contentTopics) {
+    ws.getRow(R).height = 8; R++;
+    merge(R);
+    ws.getCell(`A${R}`).value = 'CONTENT TOPICS FOR REVIEW';
+    ws.getCell(`A${R}`).style = { font:{ bold:true, color:{ argb:C.white }, size:9 }, fill:wf(C.nav), alignment:{ horizontal:'left', vertical:'middle', indent:1 } };
+    ws.getRow(R).height = 22; R++;
+
+    merge(R);
+    ws.getCell(`A${R}`).value = 'The following content areas were identified as opportunities for growth based on your exam performance. Review your course materials, lecture notes, and assigned readings covering these topics to strengthen your understanding.';
+    ws.getCell(`A${R}`).style = { font:{ italic:true, size:8, color:{ argb:C.steel } }, fill:wf(C.offwhite), alignment:{ horizontal:'left', vertical:'middle', wrapText:true, indent:1 } };
+    ws.getRow(R).height = 40; R++;
+
+    const missedItems = Object.values(student.items).filter(si => !si.isBonus && !(si.outOf>0 && (si.score/si.outOf)>=0.99));
+    const topicsToInclude = opts.selectedTopics
+      ? missedItems.filter(si => opts.selectedTopics.includes(si.qtitle || ('Question ' + si.qnum)))
+      : missedItems;
+
+    if (topicsToInclude.length === 0) {
+      merge(R);
+      ws.getCell(`A${R}`).value = 'All topics addressed successfully — no areas identified for review.';
+      ws.getCell(`A${R}`).style = { font:{ italic:true, size:9, color:{ argb:C.green } }, fill:wf(C.lgGreen), alignment:{ vertical:'middle', indent:1 } };
+      ws.getRow(R).height = 22; R++;
+    } else {
+      // Group by section
+      const byS = {};
+      topicsToInclude.forEach(si => {
+        if (!byS[si.section]) byS[si.section] = [];
+        byS[si.section].push(si);
+      });
+      for (const [sec, sitems] of Object.entries(byS).sort((a,b) => a[0].localeCompare(b[0]))) {
+        merge(R);
+        ws.getCell(`A${R}`).value = sec;
+        ws.getCell(`A${R}`).style = { font:{ bold:true, size:9, color:{ argb:C.nav } }, fill:wf(C.offwhite), alignment:{ vertical:'middle', indent:1 } };
+        ws.getRow(R).height = 18; R++;
+        sitems.forEach((si, i) => {
+          merge(R);
+          ws.getCell(`A${R}`).value = '    •  ' + (si.qtitle || ('Question ' + si.qnum));
+          ws.getCell(`A${R}`).style = { font:{ size:9 }, fill:wf(i%2===0 ? C.offwhite : C.white), alignment:{ vertical:'middle', indent:2 } };
+          ws.getRow(R).height = 18; R++;
+        });
+      }
+    }
   }
 
   // ── Spacer ──
-  ws.getRow(R).height = 8; R++;
+  ws.getRow(R).height = 12; R++;
+
+  // ── Encouraging message ──
+  merge(R);
+  ws.getCell(`A${R}`).value = 'Every step forward in your education brings you closer to the nurse you are meant to be. Stay committed, keep learning, and trust the process — your dedication today is shaping the compassionate, skilled professional you will become.';
+  ws.getCell(`A${R}`).style = { font:{ italic:true, size:9, color:{ argb:C.nav } }, fill:wf(C.lgBlue), alignment:{ horizontal:'center', vertical:'middle', wrapText:true } };
+  ws.getRow(R).height = 44; R++;
+
+  ws.getRow(R).height = 6; R++;
 
   // ── Footer ──
   merge(R);
-  ws.getCell(`A${R}`).value = 'Generated by NIARA (Nursing Item Analysis & Reporting Assistant) · GrangeRN · For remediation and academic support purposes only.';
-  ws.getCell(`A${R}`).style = { font:{ italic:true, size:8, color:{ argb:C.steel } }, fill:wf(C.offwhite), alignment:{ horizontal:'left', vertical:'middle', indent:1 } };
+  ws.getCell(`A${R}`).value = 'Generated by NIARA · Nursing Item Analysis & Reporting Assistant · GrangeRN';
+  ws.getCell(`A${R}`).style = { font:{ italic:true, size:8, color:{ argb:C.steel } }, fill:wf(C.offwhite), alignment:{ horizontal:'center', vertical:'middle' } };
   ws.getRow(R).height = 18;
 
   // ── Download ──
