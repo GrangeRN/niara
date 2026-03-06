@@ -1010,6 +1010,65 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   .flag-filter-btn.ffb-revise { background: var(--flag-revise-bg); color: var(--flag-revise-tx); }
   .flag-filter-btn.ffb-retire { background: var(--flag-retire-bg); color: var(--flag-retire-tx); }
 
+  /* ── RECOMMENDATION CELL ── */
+  .rec-cell {
+    max-width: 180px;
+    font-size: 0.78rem;
+    font-style: italic;
+    color: var(--text-light);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    position: relative;
+  }
+  .rec-cell.expanded {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    background: #fffde7;
+    z-index: 5;
+  }
+
+  /* ── ITEM CART ── */
+  .item-cart-btn {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 100;
+    background: var(--navy);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 14px 22px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(30,58,110,0.35);
+    transition: all 0.2s;
+    display: none;
+  }
+  .item-cart-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(30,58,110,0.45); }
+  .item-cart-badge {
+    background: var(--flag-retire-bg);
+    color: white;
+    border-radius: 50%;
+    min-width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    margin-left: 8px;
+  }
+  .item-select-cb {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--navy);
+  }
+
   /* ── STUDENT DOWNLOAD BTN ── */
   .student-dl-btn {
     padding: 9px 16px;
@@ -1132,7 +1191,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   .table-wrap {
     overflow-x: auto;
     overflow-y: auto;
-    max-height: 600px;
+    max-height: 1200px;
     border-radius: 0 0 10px 10px;
     border: 1px solid var(--border);
     border-top: none;
@@ -1838,15 +1897,16 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <table id="itemTable">
           <thead>
             <tr>
+              <th style="width:30px;text-align:center;"><input type="checkbox" class="item-select-cb" id="selectAllCb" onclick="toggleSelectAll(this)" title="Select all"></th>
               <th class="sortable" data-col="flag" onclick="sortTable('flag')">Flag <em class="sort-icon">⇅</em></th>
               <th class="sortable" data-col="qtitle" onclick="sortTable('qtitle')">Q Title <em class="sort-icon">⇅</em></th>
               <th>Type</th>
-              <th class="sortable" data-col="section" onclick="sortTable('section')">Module/Content Area <em class="sort-icon">⇅</em></th>
+              <th class="sortable" data-col="section" onclick="sortTable('section')" style="max-width:140px;">Module <em class="sort-icon">⇅</em></th>
               <th class="sortable" data-col="difficulty" onclick="sortTable('difficulty')">% Correct <em class="sort-icon">⇅</em></th>
-              <th class="sortable" data-col="pointBiserial" onclick="sortTable('pointBiserial')">Pt-Biserial <em class="sort-icon">⇅</em></th>
-              <th class="sortable" data-col="discriminationIndex" onclick="sortTable('discriminationIndex')">Disc. Index <em class="sort-icon">⇅</em></th>
+              <th class="sortable" data-col="pointBiserial" onclick="sortTable('pointBiserial')">Pt-Bis <em class="sort-icon">⇅</em></th>
+              <th class="sortable" data-col="discriminationIndex" onclick="sortTable('discriminationIndex')">Disc. Idx <em class="sort-icon">⇅</em></th>
               <th class="sortable" data-col="n" onclick="sortTable('n')">N <em class="sort-icon">⇅</em></th>
-              <th>Top Wrong Answer</th>
+              <th>Top Wrong</th>
               <th>Recommendation</th>
             </tr>
           </thead>
@@ -1854,6 +1914,9 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         </table>
       </div>
     </div><!-- /dashItems -->
+    <button class="item-cart-btn" id="itemCartBtn" onclick="downloadSelectedItems()" title="Download selected items as Excel">
+      Selected Items <span class="item-cart-badge" id="itemCartBadge">0</span>
+    </button>
 
     <!-- ══ TAB 3: STUDENT DIAGNOSTIC ══ -->
     <div class="dash-panel" id="dashStudents">
@@ -2058,6 +2121,8 @@ let activeModuleFilter = null;
 let itemAnalysisCollapsed = false;
 // Question title lookup map — index -> qtitle (avoids special char issues in onclick)
 let qtitleMap = {};
+// Selected items for cart export
+let selectedItems = new Set();
 
 // ── New Report Bar toggle ──
 function toggleNewReportBar() {
@@ -2952,6 +3017,11 @@ async function generateReport() {
 function renderResults() {
   const { students, items, classStats, totalScores, meta } = parsedData;
 
+  // Reset filters and cart
+  activeFlagFilter = null;
+  activeModuleFilter = null;
+  selectedItems = new Set();
+
   // Collapse the new report bar
   const nrContent = document.getElementById('newReportContent');
   const nrArrow = document.getElementById('newReportArrow');
@@ -3124,6 +3194,66 @@ function toggleFlagFilter(flag) {
   renderItemTable(activeModuleFilter);
 }
 
+function toggleItemSelect(cb) {
+  const key = cb.dataset.itemkey;
+  if (cb.checked) selectedItems.add(key);
+  else selectedItems.delete(key);
+  updateCartBadge();
+}
+function toggleSelectAll(cb) {
+  const boxes = document.querySelectorAll('#itemTableBody .item-select-cb');
+  boxes.forEach(b => {
+    b.checked = cb.checked;
+    const key = b.dataset.itemkey;
+    if (cb.checked) selectedItems.add(key);
+    else selectedItems.delete(key);
+  });
+  updateCartBadge();
+}
+function updateCartBadge() {
+  const badge = document.getElementById('itemCartBadge');
+  const btn = document.getElementById('itemCartBtn');
+  const n = selectedItems.size;
+  if (badge) badge.textContent = n;
+  if (btn) btn.style.display = n > 0 ? 'block' : 'none';
+}
+async function downloadSelectedItems() {
+  if (!parsedData || selectedItems.size === 0) return;
+  const { items, meta, totalScores } = parsedData;
+  const { topSet, botSet } = totalScores ? computeQuartiles(totalScores) : { topSet:null, botSet:null };
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'NIARA · GrangeRN';
+  const ws = wb.addWorksheet('Selected Items', { views:[{ showGridLines:false }] });
+  ws.columns = [{width:14},{width:22},{width:14},{width:10},{width:12},{width:12},{width:12},{width:10},{width:16},{width:16},{width:16},{width:18},{width:18},{width:16}];
+
+  const C_white = 'FFFFFFFF';
+  const C_nav = 'FF1e3a6e';
+  function wf(hex) { return { type:'pattern',pattern:'solid',fgColor:{argb:hex} }; }
+
+  // Header
+  ws.mergeCells('A1:N1');
+  ws.getCell('A1').value = 'NIARA — Selected Items | ' + (meta.examName||'') + ' | ' + (meta.semester||'') + ' ' + (meta.year||'');
+  ws.getCell('A1').style = { font:{bold:true,color:{argb:C_white},size:13}, fill:wf(C_nav), alignment:{horizontal:'left',vertical:'middle'} };
+  ws.getRow(1).height = 30;
+
+  let R = 3;
+  const selectedArr = Object.values(items).filter(i => selectedItems.has(i.qtitle || i.qtext));
+  selectedArr.sort((a,b) => (a.section||'').localeCompare(b.section||''));
+
+  const theme = { headerArgb:'FF2c5282' };
+  selectedArr.forEach(item => {
+    R = buildQuestionBlock(ws, R, item, theme, topSet, botSet);
+  });
+
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url;
+  a.download = 'NIARA_SelectedItems_' + (meta.examName||'').replace(/[^a-zA-Z0-9]/g,'') + '.xlsx';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function toggleItemAnalysis() {
   itemAnalysisCollapsed = !itemAnalysisCollapsed;
   const body = document.getElementById('itemAnalysisBody');
@@ -3196,7 +3326,8 @@ function renderItemTable(moduleFilter) {
 
   filteredItems.forEach((item, idx) => {
     const mapKey = Object.keys(qtitleMap).length;
-    qtitleMap[mapKey] = item.qtitle || item.qtext;
+    const itemKey = item.qtitle || item.qtext;
+    qtitleMap[mapKey] = itemKey;
 
     const f = item.flag || { flag:'KEEP', reason:'' };
     const rec = f.reason;
@@ -3211,21 +3342,27 @@ function renderItemTable(moduleFilter) {
       ? (item.qtitle ? `<span style="color:var(--steel);font-size:0.75rem;">${esc(item.qtitle)}</span><br>${esc((item.qtext||'').substring(0,80))}${(item.qtext||'').length>80?'…':''}`
                       : esc((item.qtext||'').substring(0,80)) + ((item.qtext||'').length>80?'…':''))
       : `<strong>${esc(item.qtitle||'')}</strong>`;
+    const isChecked = selectedItems.has(itemKey);
     const tr = document.createElement('tr');
     tr.innerHTML = `
+      <td style="text-align:center;"><input type="checkbox" class="item-select-cb" data-itemkey="${esc(itemKey)}" ${isChecked?'checked':''} onchange="toggleItemSelect(this)"></td>
       <td><span class="flag-pill pill-${f.flag.toLowerCase()}">${f.flag}</span>${pgBadge ? '<br><span style="margin-top:4px;display:block;">' + pgBadge + '</span>' : ''}</td>
-      <td style="max-width:220px;"><span class="qtitle-link" data-qkey="${mapKey}" title="Click to view question detail">${displayTitle}</span></td>
+      <td style="max-width:200px;"><span class="qtitle-link" data-qkey="${mapKey}" title="Click to view question detail">${displayTitle}</span></td>
       <td style="white-space:nowrap;">${item.qtype}</td>
-      <td style="white-space:nowrap;font-size:0.82rem;">${esc(item.section||'')}</td>
+      <td style="max-width:140px;font-size:0.82rem;word-wrap:break-word;white-space:normal;">${esc(item.section||'')}</td>
       <td style="text-align:center;">${item.difficulty !== null ? pct(item.difficulty) : 'n/a'}</td>
       <td style="text-align:center;">${item.pointBiserial !== null ? fmt2(item.pointBiserial) : 'n/a'}</td>
       <td style="text-align:center;">${item.discriminationIndex !== null ? fmt2(item.discriminationIndex) : 'n/a'}</td>
       <td style="text-align:center;">${item.n}</td>
-      <td style="max-width:180px;font-size:0.82rem;">${item.topWrongAnswer ? esc(item.topWrongAnswer) + ' <span style="color:var(--text-light);">(' + pct(item.topWrongRate) + ')</span>' : '—'}</td>
-      <td style="max-width:260px;font-size:0.82rem;font-style:italic;color:var(--text-light);">${esc(rec)}</td>
+      <td style="max-width:140px;font-size:0.78rem;word-wrap:break-word;white-space:normal;">${item.topWrongAnswer ? esc(item.topWrongAnswer) + ' <span style="color:var(--text-light);">(' + pct(item.topWrongRate) + ')</span>' : '—'}</td>
+      <td class="rec-cell" onclick="this.classList.toggle('expanded')" title="${esc(rec)}">${esc(rec)}</td>
     `;
     tbody.appendChild(tr);
   });
+
+  // Reset select-all checkbox
+  const selAll = document.getElementById('selectAllCb');
+  if (selAll) selAll.checked = false;
 
   // Sync dual scroll
   setTimeout(syncScrollBars, 50);
@@ -3819,6 +3956,8 @@ function clearAndRestart() {
   activeModuleFilter = null;
   currentSort = { col: null, dir: 'asc' };
   itemAnalysisCollapsed = false;
+  selectedItems = new Set();
+  updateCartBadge();
 
   document.getElementById('mainFileInput').value = '';
   document.getElementById('mainFileName').textContent = '';
