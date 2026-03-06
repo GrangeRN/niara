@@ -1031,43 +1031,110 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   }
 
   /* ── ITEM CART ── */
-  .item-cart-btn {
-    position: fixed;
-    bottom: 28px;
-    right: 28px;
-    z-index: 100;
+  .item-cart-bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
     background: var(--navy);
     color: white;
-    border: none;
-    border-radius: 50px;
-    padding: 14px 22px;
-    font-family: 'Source Sans 3', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 4px 20px rgba(30,58,110,0.35);
-    transition: all 0.2s;
+    padding: 8px 20px;
+    border-radius: 8px;
+    margin-bottom: 12px;
     display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    box-shadow: 0 2px 12px rgba(30,58,110,0.25);
   }
-  .item-cart-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(30,58,110,0.45); }
+  .item-cart-bar.visible { display: flex; }
+  .cart-left { display:flex; align-items:center; gap:12px; }
   .item-cart-badge {
     background: var(--flag-retire-bg);
     color: white;
     border-radius: 50%;
-    min-width: 22px;
-    height: 22px;
+    min-width: 24px;
+    height: 24px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.75rem;
-    margin-left: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
   }
+  .cart-btn {
+    padding: 7px 16px;
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 6px;
+    background: transparent;
+    color: white;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .cart-btn:hover { background: rgba(255,255,255,0.15); }
+  .cart-btn.primary { background: rgba(255,255,255,0.2); border-color: white; }
   .item-select-cb {
     width: 16px;
     height: 16px;
     cursor: pointer;
     accent-color: var(--navy);
   }
+
+  /* ── CART MODAL ── */
+  .cart-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cart-modal {
+    background: white;
+    border-radius: 12px;
+    padding: 28px 32px;
+    max-width: 480px;
+    width: 90%;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+    font-family: 'Source Sans 3', sans-serif;
+  }
+  .cart-modal h3 {
+    font-family: 'Playfair Display', serif;
+    color: var(--navy);
+    margin: 0 0 6px;
+    font-size: 1.15rem;
+  }
+  .cart-modal p { font-size: 0.85rem; color: var(--text-light); margin: 0 0 16px; }
+  .cart-modal label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 0.9rem;
+    color: var(--navy);
+    cursor: pointer;
+  }
+  .cart-modal label input { accent-color: var(--navy); width:16px; height:16px; }
+  .cart-modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: flex-end;
+  }
+  .cart-modal-actions button {
+    padding: 9px 20px;
+    border-radius: 6px;
+    border: none;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .cart-modal-actions .btn-cancel { background: var(--offwhite); color: var(--text-light); }
+  .cart-modal-actions .btn-download { background: var(--navy); color: white; }
+  .cart-modal-actions .btn-print { background: var(--flag-keep-bg); color: white; }
 
   /* ── STUDENT DOWNLOAD BTN ── */
   .student-dl-btn {
@@ -1889,6 +1956,16 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <h2 style="font-family:'Playfair Display',serif;color:var(--navy);font-size:1.2rem;">Item Analysis</h2>
         <button class="section-close-btn" onclick="switchDashTab('overview')">Back to Overview</button>
       </div>
+      <div class="item-cart-bar" id="itemCartBar">
+        <div class="cart-left">
+          <span class="item-cart-badge" id="itemCartBadge">0</span>
+          <span style="font-size:0.88rem;">items selected</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="cart-btn" onclick="clearAllSelections()">Deselect All</button>
+          <button class="cart-btn primary" onclick="openCartModal()">Generate Report</button>
+        </div>
+      </div>
       <div class="module-tabs" id="moduleTabs"></div>
       <div class="flag-filter-row" id="flagFilterRow"></div>
       <div class="section-title" id="itemTableTitle">All Items</div>
@@ -1914,9 +1991,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         </table>
       </div>
     </div><!-- /dashItems -->
-    <button class="item-cart-btn" id="itemCartBtn" onclick="downloadSelectedItems()" title="Download selected items as Excel">
-      Selected Items <span class="item-cart-badge" id="itemCartBadge">0</span>
-    </button>
 
     <!-- ══ TAB 3: STUDENT DIAGNOSTIC ══ -->
     <div class="dash-panel" id="dashStudents">
@@ -3155,6 +3229,12 @@ function renderResults() {
     btn.onclick = () => {
       document.querySelectorAll('.mod-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      // Clear flag filter when selecting a module
+      activeFlagFilter = null;
+      ['KEEP','REVISE','RETIRE'].forEach(f => {
+        const el = document.getElementById('ffb-' + f.toLowerCase());
+        if (el) el.classList.remove('active-filter');
+      });
       const filter = mod === 'All' ? null : mod;
       renderItemTable(filter);
     };
@@ -3185,13 +3265,19 @@ function toggleFlagFilter(flag) {
   } else {
     activeFlagFilter = flag;
   }
+  // Clear module filter when using flag filter
+  activeModuleFilter = null;
+  document.querySelectorAll('.mod-tab').forEach(b => b.classList.remove('active'));
+  const allTab = document.querySelector('.mod-tab');
+  if (allTab) allTab.classList.add('active');
+
   ['KEEP','REVISE','RETIRE'].forEach(f => {
     const el = document.getElementById('ffb-' + f.toLowerCase());
     if (el) el.classList.toggle('active-filter', activeFlagFilter === f);
   });
   // Switch to Item Analysis tab if not already there
   switchDashTab('items');
-  renderItemTable(activeModuleFilter);
+  renderItemTable(null);
 }
 
 function toggleItemSelect(cb) {
@@ -3212,44 +3298,325 @@ function toggleSelectAll(cb) {
 }
 function updateCartBadge() {
   const badge = document.getElementById('itemCartBadge');
-  const btn = document.getElementById('itemCartBtn');
+  const bar = document.getElementById('itemCartBar');
   const n = selectedItems.size;
   if (badge) badge.textContent = n;
-  if (btn) btn.style.display = n > 0 ? 'block' : 'none';
+  if (bar) bar.classList.toggle('visible', n > 0);
 }
-async function downloadSelectedItems() {
-  if (!parsedData || selectedItems.size === 0) return;
-  const { items, meta, totalScores } = parsedData;
-  const { topSet, botSet } = totalScores ? computeQuartiles(totalScores) : { topSet:null, botSet:null };
-  const wb = new ExcelJS.Workbook();
-  wb.creator = 'NIARA · GrangeRN';
-  const ws = wb.addWorksheet('Selected Items', { views:[{ showGridLines:false }] });
-  ws.columns = [{width:14},{width:22},{width:14},{width:10},{width:12},{width:12},{width:12},{width:10},{width:16},{width:16},{width:16},{width:18},{width:18},{width:16}];
+function clearAllSelections() {
+  selectedItems.clear();
+  document.querySelectorAll('#itemTableBody .item-select-cb').forEach(b => b.checked = false);
+  const selAll = document.getElementById('selectAllCb');
+  if (selAll) selAll.checked = false;
+  updateCartBadge();
+}
+function openCartModal() {
+  if (selectedItems.size === 0) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'cart-modal-overlay';
+  overlay.id = 'cartModalOverlay';
+  overlay.innerHTML = `
+    <div class="cart-modal">
+      <h3>Generate Item Report</h3>
+      <p>${selectedItems.size} item(s) selected. Choose what to include:</p>
+      <label><input type="checkbox" id="cartOptTitle" checked> Question Title &amp; Flag</label>
+      <label><input type="checkbox" id="cartOptStem" checked> Question Stem</label>
+      <label><input type="checkbox" id="cartOptChoices" checked> Answer Choices</label>
+      <label><input type="checkbox" id="cartOptStats" checked> Statistics (Difficulty, PB, DI)</label>
+      <label><input type="checkbox" id="cartOptRec" checked> NIARA Recommendation</label>
+      <label><input type="checkbox" id="cartOptTags" checked> Pre-Grade Tags (AAC/VAK)</label>
+      <div class="cart-modal-actions">
+        <button class="btn-cancel" onclick="closeCartModal()">Cancel</button>
+        <button class="btn-print" onclick="generateCartReport('print')">Print</button>
+        <button class="btn-download" onclick="generateCartReport('download')">Download Excel</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeCartModal(); });
+}
+function closeCartModal() {
+  const o = document.getElementById('cartModalOverlay');
+  if (o) o.remove();
+}
+function getCartOptions() {
+  return {
+    title: document.getElementById('cartOptTitle')?.checked ?? true,
+    stem: document.getElementById('cartOptStem')?.checked ?? true,
+    choices: document.getElementById('cartOptChoices')?.checked ?? true,
+    stats: document.getElementById('cartOptStats')?.checked ?? true,
+    rec: document.getElementById('cartOptRec')?.checked ?? true,
+    tags: document.getElementById('cartOptTags')?.checked ?? true,
+  };
+}
+function generateCartReport(mode) {
+  const opts = getCartOptions();
+  closeCartModal();
 
-  const C_white = 'FFFFFFFF';
-  const C_nav = 'FF1e3a6e';
-  function wf(hex) { return { type:'pattern',pattern:'solid',fgColor:{argb:hex} }; }
+  // Security reminder
+  if (!confirm('REMINDER: Maintain test security at all times. Save this report in a secure, access-controlled location. Do not share with students or unauthorized individuals.\n\nClick OK to confirm you agree to maintain test security.')) return;
 
-  // Header
-  ws.mergeCells('A1:N1');
-  ws.getCell('A1').value = 'NIARA — Selected Items | ' + (meta.examName||'') + ' | ' + (meta.semester||'') + ' ' + (meta.year||'');
-  ws.getCell('A1').style = { font:{bold:true,color:{argb:C_white},size:13}, fill:wf(C_nav), alignment:{horizontal:'left',vertical:'middle'} };
-  ws.getRow(1).height = 30;
-
-  let R = 3;
+  if (mode === 'print') generatePrintReport(opts);
+  else generateExcelCartReport(opts);
+}
+function generatePrintReport(opts) {
+  const { items, meta } = parsedData;
   const selectedArr = Object.values(items).filter(i => selectedItems.has(i.qtitle || i.qtext));
   selectedArr.sort((a,b) => (a.section||'').localeCompare(b.section||''));
 
-  const theme = { headerArgb:'FF2c5282' };
+  let html = `<!DOCTYPE html><html><head><title>NIARA Item Report</title>
+<style>
+  @page { size: portrait; margin: 0.5in; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 9pt; color: #1e3a6e; line-height: 1.35; }
+  .report-header { background: #1e3a6e; color: white; padding: 10px 16px; margin-bottom: 10px; }
+  .report-header h1 { font-size: 13pt; font-weight: 700; }
+  .report-header p { font-size: 8pt; opacity: 0.8; }
+  .q-block { border: 1px solid #c8d8ec; border-radius: 4px; margin-bottom: 8px; page-break-inside: avoid; overflow: hidden; }
+  .q-title { background: #2c5282; color: white; padding: 5px 10px; font-weight: 700; font-size: 9pt; display: flex; justify-content: space-between; align-items: center; }
+  .q-flag { padding: 2px 8px; border-radius: 3px; font-size: 7pt; font-weight: 700; text-transform: uppercase; }
+  .flag-KEEP { background: #1b7a3e; } .flag-REVISE { background: #d4620a; } .flag-RETIRE { background: #7b1a2a; }
+  .q-body { padding: 6px 10px; }
+  .q-stem { background: #f4f7fb; padding: 5px 8px; border-radius: 3px; margin-bottom: 5px; font-size: 8.5pt; }
+  .q-stats { display: flex; gap: 12px; font-size: 8pt; color: #4a7ab5; margin-bottom: 5px; flex-wrap: wrap; }
+  .q-stats span { white-space: nowrap; }
+  .q-stats strong { color: #1e3a6e; }
+  .q-rec { font-style: italic; font-size: 8pt; color: #4a7ab5; margin-bottom: 5px; border-left: 3px solid #c8d8ec; padding-left: 6px; }
+  .q-tags { display: flex; gap: 6px; margin-bottom: 5px; }
+  .q-tag { font-size: 7pt; font-weight: 700; padding: 2px 6px; border-radius: 3px; color: white; }
+  .tag-vak { background: #c0392b; } .tag-aac { background: #8b0000; }
+  .choice-table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+  .choice-table th { background: #e8edf4; color: #1e3a6e; padding: 3px 6px; text-align: left; font-size: 7.5pt; }
+  .choice-table td { padding: 3px 6px; border-bottom: 1px solid #e8edf4; }
+  .choice-correct { background: #e8f5e9; }
+  .security-footer { margin-top: 12px; text-align: center; font-size: 7pt; color: #999; border-top: 1px solid #ddd; padding-top: 6px; }
+  @media print { .no-print { display: none; } }
+</style></head><body>
+<div class="report-header">
+  <h1>NIARA — Item Review Report</h1>
+  <p>${esc(meta.examName||'')} | ${esc(meta.courseLabel||'')} | ${esc((meta.semester||'')+' '+(meta.year||''))} | ${selectedArr.length} items</p>
+</div>`;
+
   selectedArr.forEach(item => {
-    R = buildQuestionBlock(ws, R, item, theme, topSet, botSet);
+    const f = item.flag || { flag:'KEEP', reason:'' };
+    const pg = item.preGradeFlags || {};
+    html += '<div class="q-block">';
+
+    if (opts.title) {
+      const title = item.qtype === 'FIB' ? (item.fibCategory ? '['+item.fibCategory+'] ' : '') + (item.qtext||'').substring(0,100) : (item.qtitle||'');
+      html += `<div class="q-title"><span>${esc(title)}</span><span class="q-flag flag-${f.flag}">${f.flag}</span></div>`;
+    }
+
+    html += '<div class="q-body">';
+
+    if (opts.tags && (pg.vak || pg.aac)) {
+      html += '<div class="q-tags">';
+      if (pg.vak) html += '<span class="q-tag tag-vak">VERIFY ANSWER KEY</span>';
+      if (pg.aac) html += '<span class="q-tag tag-aac">AWARD ADDITIONAL CREDIT</span>';
+      html += '</div>';
+    }
+
+    if (opts.stats) {
+      html += '<div class="q-stats">';
+      html += '<span>Type: <strong>' + esc(item.qtype||'') + '</strong></span>';
+      html += '<span>Module: <strong>' + esc(item.section||'') + '</strong></span>';
+      html += '<span>N: <strong>' + (item.n||0) + '</strong></span>';
+      html += '<span>Difficulty: <strong>' + (item.difficulty!==null ? pct(item.difficulty) : 'n/a') + '</strong></span>';
+      html += '<span>Pt-Bis: <strong>' + (item.pointBiserial!==null ? fmt2(item.pointBiserial) : 'n/a') + '</strong></span>';
+      html += '<span>Disc. Idx: <strong>' + (item.discriminationIndex!==null ? fmt2(item.discriminationIndex) : 'n/a') + '</strong></span>';
+      html += '</div>';
+    }
+
+    if (opts.stem) {
+      html += '<div class="q-stem">' + esc(item.qtext || item.qtitle || '') + '</div>';
+    }
+
+    if (opts.choices) {
+      if (item.qtype === 'MC' || item.qtype === 'M-S' || item.qtype === 'T-F') {
+        const correctSet = new Set(item.correctAnswers || (item.correctAnswer ? [item.correctAnswer] : []));
+        const choices = Object.entries(item.distractorCounts || {});
+        if (choices.length > 0) {
+          html += '<table class="choice-table"><tr><th>Choice</th><th>n</th><th>%</th></tr>';
+          choices.forEach(([ans, count]) => {
+            const isC = correctSet.has(ans);
+            const rate = item.n > 0 ? Math.round(count/item.n*100) : 0;
+            html += '<tr class="' + (isC?'choice-correct':'') + '"><td>' + (isC?'<strong>':'') + esc(ans) + (isC?' ✓</strong>':'') + '</td><td>' + count + '</td><td>' + rate + '%</td></tr>';
+          });
+          html += '</table>';
+        }
+      } else if (item.qtype === 'MAT' && item.matData) {
+        html += '<table class="choice-table"><tr><th>Prompt</th><th>Keyed Response</th><th>% Correct</th></tr>';
+        Object.entries(item.matData).forEach(([prompt, data]) => {
+          const correctAns = data.correctAnswer || prompt;
+          const correctCount = data.responses[correctAns] || 0;
+          const rate = item.n > 0 ? Math.round(correctCount/item.n*100) : 0;
+          html += '<tr><td>' + esc(prompt) + '</td><td>' + esc(correctAns) + '</td><td>' + rate + '%</td></tr>';
+        });
+        html += '</table>';
+      } else if (item.qtype === 'FIB') {
+        const resps = item.responses || [];
+        const respCounts = {};
+        resps.forEach(r => { const a = (r.student_answer||'').trim(); if (a) respCounts[a] = (respCounts[a]||0)+1; });
+        const sorted = Object.entries(respCounts).sort((a,b) => b[1]-a[1]).slice(0,5);
+        if (sorted.length > 0) {
+          html += '<table class="choice-table"><tr><th>Response</th><th>n</th><th>%</th></tr>';
+          sorted.forEach(([ans,cnt]) => {
+            const isKey = ans === item.correctAnswer;
+            html += '<tr class="' + (isKey?'choice-correct':'') + '"><td>' + (isKey?'<strong>':'') + esc(ans) + (isKey?' ✓</strong>':'') + '</td><td>' + cnt + '</td><td>' + Math.round(cnt/item.n*100) + '%</td></tr>';
+          });
+          html += '</table>';
+        }
+      }
+    }
+
+    if (opts.rec && f.reason) {
+      html += '<div class="q-rec">' + esc(f.reason) + '</div>';
+    }
+
+    html += '</div></div>';
   });
 
-  const buf = await wb.xlsx.writeBuffer();
-  const blob = new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url;
-  a.download = 'NIARA_SelectedItems_' + (meta.examName||'').replace(/[^a-zA-Z0-9]/g,'') + '.xlsx';
+  html += '<div class="security-footer">CONFIDENTIAL — For authorized faculty use only. Maintain test security at all times. NIARA · GrangeRN</div>';
+  html += '</body></html>';
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => win.print(), 400);
+}
+async function generateExcelCartReport(opts) {
+  const { items, meta, totalScores } = parsedData;
+  const selectedArr = Object.values(items).filter(i => selectedItems.has(i.qtitle || i.qtext));
+  selectedArr.sort((a,b) => (a.section||'').localeCompare(b.section||''));
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'NIARA · GrangeRN';
+  const ws = wb.addWorksheet('Selected Items', { views:[{showGridLines:false}], pageSetup:{orientation:'portrait', fitToPage:true, fitToWidth:1, margins:{top:0.4,bottom:0.4,left:0.4,right:0.4}} });
+  ws.columns = [{width:12},{width:18},{width:12},{width:9},{width:10},{width:10},{width:10},{width:9},{width:14},{width:14},{width:14},{width:14},{width:14},{width:12}];
+
+  const C_white='FFFFFFFF', C_nav='FF1e3a6e', C_blue='FF2c5282', C_steel='FF4a7ab5';
+  function wf(hex){return{type:'pattern',pattern:'solid',fgColor:{argb:hex}};}
+  const navFill=wf(C_nav), blueFill=wf(C_blue), whiteFill=wf(C_white), grayFill=wf('FFF5F5F5');
+  const hdrFont={bold:true,color:{argb:C_white},size:8};
+
+  ws.mergeCells('A1:N1');
+  ws.getCell('A1').value='NIARA — Item Review Report | '+(meta.examName||'')+' | '+(meta.semester||'')+' '+(meta.year||'');
+  ws.getCell('A1').style={font:{bold:true,color:{argb:C_white},size:11},fill:navFill,alignment:{horizontal:'left',vertical:'middle'}};
+  ws.getRow(1).height=26;
+  ws.mergeCells('A2:N2');
+  ws.getCell('A2').value='CONFIDENTIAL — For authorized faculty use only. Maintain test security.';
+  ws.getCell('A2').style={font:{italic:true,size:7,color:{argb:C_steel}},fill:grayFill,alignment:{horizontal:'center',vertical:'middle'}};
+  ws.getRow(2).height=16;
+
+  let R=4;
+  const COLS=14;
+  selectedArr.forEach(item => {
+    const f=item.flag||{flag:'KEEP',reason:''};
+    const pg=item.preGradeFlags||{};
+
+    if(opts.title){
+      const title=item.qtype==='FIB'?(item.fibCategory?'['+item.fibCategory+'] ':'')+(item.qtext||'').substring(0,100):(item.qtitle||'');
+      ws.mergeCells(R,1,R,12);
+      ws.getCell(R,1).value=title;
+      ws.getCell(R,1).style={font:{bold:true,color:{argb:C_white},size:9},fill:blueFill,alignment:{vertical:'middle',indent:1}};
+      ws.mergeCells(R,13,R,COLS);
+      const flagColors={KEEP:'FF1b7a3e',REVISE:'FFd4620a',RETIRE:'FF7b1a2a'};
+      ws.getCell(R,13).value=f.flag;
+      ws.getCell(R,13).style={font:{bold:true,color:{argb:C_white},size:9},fill:wf(flagColors[f.flag]||C_nav),alignment:{horizontal:'center',vertical:'middle'}};
+      ws.getRow(R).height=20;
+      R++;
+    }
+
+    if(opts.tags&&(pg.vak||pg.aac)){
+      ws.mergeCells(R,1,R,COLS);
+      let tagText='';
+      if(pg.vak)tagText+='VERIFY ANSWER KEY';
+      if(pg.aac)tagText+=(tagText?' | ':'')+'AWARD ADDITIONAL CREDIT';
+      ws.getCell(R,1).value=tagText;
+      ws.getCell(R,1).style={font:{bold:true,size:8,color:{argb:'FFC62828'}},fill:wf('FFFFF3E0'),alignment:{vertical:'middle',indent:1}};
+      ws.getRow(R).height=16;
+      R++;
+    }
+
+    if(opts.stats){
+      const sh={font:hdrFont,fill:wf('FF3a6ea5'),alignment:{horizontal:'center',vertical:'middle',wrapText:true}};
+      const labels=['Type','Module','N','Difficulty','Pt-Biserial','Disc. Index'];
+      const vals=[item.qtype||'',item.section||'',item.n||0,item.difficulty!==null?Math.round(item.difficulty*100)+'%':'n/a',item.pointBiserial!==null?item.pointBiserial.toFixed(2):'n/a',item.discriminationIndex!==null?item.discriminationIndex.toFixed(2):'n/a'];
+      for(let c=0;c<6;c++){
+        const col=c*2+1;
+        ws.mergeCells(R,col,R,col+1);
+        ws.getCell(R,col).value=labels[c];
+        ws.getCell(R,col).style=sh;
+      }
+      ws.mergeCells(R,13,R,COLS);ws.getCell(R,13).style=sh;ws.getCell(R,13).value='';
+      ws.getRow(R).height=16;R++;
+      const dv={font:{size:8,color:{argb:C_nav}},fill:whiteFill,alignment:{horizontal:'center',vertical:'middle'}};
+      for(let c=0;c<6;c++){
+        const col=c*2+1;
+        ws.mergeCells(R,col,R,col+1);
+        ws.getCell(R,col).value=vals[c];
+        ws.getCell(R,col).style=dv;
+      }
+      ws.mergeCells(R,13,R,COLS);ws.getCell(R,13).style=dv;ws.getCell(R,13).value='';
+      ws.getRow(R).height=16;R++;
+    }
+
+    if(opts.stem){
+      ws.mergeCells(R,1,R,COLS);
+      ws.getCell(R,1).value=item.qtext||item.qtitle||'';
+      ws.getCell(R,1).style={font:{size:8},fill:wf('FFF4F7FB'),alignment:{vertical:'middle',wrapText:true,indent:1}};
+      const len=(item.qtext||'').length;
+      ws.getRow(R).height=Math.min(40,Math.max(16,Math.ceil(len/100)*12));
+      R++;
+    }
+
+    if(opts.choices){
+      const correctSet=new Set(item.correctAnswers||(item.correctAnswer?[item.correctAnswer]:[]));
+      if(item.qtype==='MC'||item.qtype==='M-S'||item.qtype==='T-F'){
+        const choices=Object.entries(item.distractorCounts||{});
+        if(choices.length>0){
+          choices.forEach(([ans,count])=>{
+            const isC=correctSet.has(ans);
+            const rate=item.n>0?Math.round(count/item.n*100):0;
+            ws.mergeCells(R,1,R,10);
+            ws.getCell(R,1).value=(isC?'✓ ':'')+ans;
+            ws.getCell(R,1).style={font:{bold:isC,size:8,color:{argb:isC?'FF1b7a3e':C_nav}},fill:isC?wf('FFe8f5e9'):whiteFill,alignment:{vertical:'middle',wrapText:true,indent:1}};
+            ws.mergeCells(R,11,R,12);
+            ws.getCell(R,11).value=count+'/'+item.n;
+            ws.getCell(R,11).style={font:{size:8},fill:whiteFill,alignment:{horizontal:'center',vertical:'middle'}};
+            ws.mergeCells(R,13,R,COLS);
+            ws.getCell(R,13).value=rate+'%';
+            ws.getCell(R,13).style={font:{size:8,bold:!isC&&rate>35},fill:whiteFill,alignment:{horizontal:'center',vertical:'middle'}};
+            ws.getRow(R).height=15;R++;
+          });
+        }
+      }
+    }
+
+    if(opts.rec&&f.reason){
+      ws.mergeCells(R,1,R,COLS);
+      ws.getCell(R,1).value=f.reason;
+      ws.getCell(R,1).style={font:{italic:true,size:7,color:{argb:C_steel}},fill:grayFill,alignment:{vertical:'middle',wrapText:true,indent:1}};
+      ws.getRow(R).height=Math.min(28,Math.max(14,Math.ceil(f.reason.length/120)*10));
+      R++;
+    }
+
+    // Small spacer between items
+    ws.getRow(R).height=8;
+    for(let c=1;c<=COLS;c++)ws.getCell(R,c).style={fill:whiteFill};
+    R++;
+  });
+
+  // Security footer
+  ws.mergeCells(R,1,R,COLS);
+  ws.getCell(R,1).value='CONFIDENTIAL — For authorized faculty use only. Maintain test security. NIARA · GrangeRN';
+  ws.getCell(R,1).style={font:{italic:true,size:7,color:{argb:C_steel}},fill:grayFill,alignment:{horizontal:'center',vertical:'middle'}};
+
+  const buf=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;
+  a.download='NIARA_ItemReview_'+(meta.examName||'').replace(/[^a-zA-Z0-9]/g,'')+'.xlsx';
   a.click();
   URL.revokeObjectURL(url);
 }
