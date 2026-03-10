@@ -2164,28 +2164,25 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <button class="filter-btn" onclick="nscSelectByGrade(75, 80)">75-79%</button>
             <button class="filter-btn" onclick="nscSelectByGrade(0, 80)">&lt;80%</button>
           </div>
-
-          <div style="margin-left:auto;">
-            <strong style="font-size:0.82rem;color:var(--text);margin-right:8px;">Sort:</strong>
-            <select id="nscSort" onchange="renderNSCTable()" style="padding:4px 8px;font-size:0.82rem;border:1px solid var(--border);border-radius:4px;">
-              <option value="name-az">Name (A-Z)</option>
-              <option value="name-za">Name (Z-A)</option>
-              <option value="grade-asc">Grade (Low to High)</option>
-              <option value="grade-desc">Grade (High to Low)</option>
-            </select>
-          </div>
         </div>
 
         <input type="text" id="nscSearch" placeholder="Search by student name..." onkeyup="renderNSCTable()" style="width:100%;max-width:400px;padding:8px 12px;font-size:0.85rem;border:1px solid var(--border);border-radius:4px;">
       </div>
 
+      <!-- Action Buttons Top -->
+      <div style="display:flex;gap:12px;justify-content:flex-end;margin-bottom:16px;">
+        <button class="primary-btn" onclick="downloadNSCReport()" style="background:var(--navy);padding:12px 24px;font-size:0.95rem;font-weight:700;">
+          📊 Download Nursing Success Center Report
+        </button>
+      </div>
+
       <!-- Student Table -->
       <div id="nscTableContainer" style="margin-bottom:20px;"></div>
 
-      <!-- Action Buttons -->
+      <!-- Action Buttons Bottom -->
       <div style="display:flex;gap:12px;justify-content:flex-end;">
         <button class="primary-btn" onclick="downloadNSCReport()" style="background:var(--navy);padding:12px 24px;font-size:0.95rem;font-weight:700;">
-          📊 Download Excel Report
+          📊 Download Nursing Success Center Report
         </button>
       </div>
     </div><!-- /dashSuccessCenter -->
@@ -7521,6 +7518,8 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // Store NSC data (student selection + interventions + comments)
 let nscData = {};
+let nscSortColumn = 'name'; // 'name' or 'grade'
+let nscSortAsc = true;
 
 function initializeNSCData() {
   if (!parsedData || !parsedData.students) return;
@@ -7587,12 +7586,21 @@ function updateNSCComment(sid, comment) {
   }
 }
 
+function nscToggleSort(column) {
+  if (nscSortColumn === column) {
+    nscSortAsc = !nscSortAsc;
+  } else {
+    nscSortColumn = column;
+    nscSortAsc = true;
+  }
+  renderNSCTable();
+}
+
 function renderNSCTable() {
   if (!parsedData || !parsedData.students) return;
 
   const { students } = parsedData;
   const searchTerm = (document.getElementById('nscSearch')?.value || '').toLowerCase();
-  const sortOrder = document.getElementById('nscSort')?.value || 'name-az';
 
   // Get student list
   let studentList = Object.values(students).map(s => ({
@@ -7612,19 +7620,26 @@ function renderNSCTable() {
 
   // Sort
   studentList.sort((a, b) => {
-    if (sortOrder === 'name-az') return a.lname.localeCompare(b.lname);
-    if (sortOrder === 'name-za') return b.lname.localeCompare(a.lname);
-    if (sortOrder === 'grade-asc') return a.pctScore - b.pctScore;
-    if (sortOrder === 'grade-desc') return b.pctScore - a.pctScore;
-    return 0;
+    let result;
+    if (nscSortColumn === 'name') {
+      result = a.lname.localeCompare(b.lname);
+    } else if (nscSortColumn === 'grade') {
+      result = a.pctScore - b.pctScore;
+    } else {
+      result = 0;
+    }
+    return nscSortAsc ? result : -result;
   });
 
   // Build table HTML
+  const nameSortIcon = nscSortColumn === 'name' ? (nscSortAsc ? ' ▲' : ' ▼') : '';
+  const gradeSortIcon = nscSortColumn === 'grade' ? (nscSortAsc ? ' ▲' : ' ▼') : '';
+
   let html = '<table class="nsc-table">';
   html += '<thead><tr>';
   html += '<th style="width:50px;text-align:center;">Select</th>';
-  html += '<th style="width:200px;">Student Name</th>';
-  html += '<th style="width:80px;text-align:center;">Grade</th>';
+  html += '<th style="width:200px;cursor:pointer;" onclick="nscToggleSort(\'name\')">Student Name' + nameSortIcon + '</th>';
+  html += '<th style="width:80px;text-align:center;cursor:pointer;" onclick="nscToggleSort(\'grade\')">Grade' + gradeSortIcon + '</th>';
   html += '<th>Intervention Areas</th>';
   html += '<th style="width:200px;">Faculty Comments</th>';
   html += '</tr></thead><tbody>';
@@ -7958,25 +7973,33 @@ async function generateNSCExcelReport() {
 
   const ws2 = wb.addWorksheet('Flagged Students Summary');
   ws2.views = [{ showGridLines: false }];
-  ws2.columns = [{ width:25 }, { width:12 }, { width:40 }, { width:35 }];
+  ws2.columns = [{ width:25 }, { width:12 }, { width:35 }, { width:30 }, { width:15 }, { width:35 }, { width:18 }];
 
   R = 1;
 
   // Title
-  ws2.mergeCells(`A${R}:D${R}`);
+  ws2.mergeCells(`A${R}:G${R}`);
   ws2.getCell(`A${R}`).value = 'FLAGGED STUDENTS SUMMARY';
   ws2.getCell(`A${R}`).style = { font:{ bold:true, color:{ argb:C.white }, size:14 }, fill:wf(C.nav), alignment:{ horizontal:'left', vertical:'middle', indent:1 } };
   ws2.getRow(R).height = 32; R++;
 
-  ws2.mergeCells(`A${R}:D${R}`);
+  ws2.mergeCells(`A${R}:G${R}`);
   ws2.getCell(`A${R}`).value = 'Students identified for Nursing Success Center support';
   ws2.getCell(`A${R}`).style = { font:{ italic:true, color:{ argb:C.powder }, size:7.5 }, fill:wf(C.navDark), alignment:{ horizontal:'left', vertical:'middle', indent:1 } };
   ws2.getRow(R).height = 14; R++;
 
   ws2.getRow(R).height = 8; R++;
 
+  // Instructions for Success Coach
+  ws2.mergeCells(`A${R}:G${R}`);
+  ws2.getCell(`A${R}`).value = 'INSTRUCTIONS FOR SUCCESS COACH: Complete the highlighted columns (Date of Contact, Comments, Follow Up Required) for each student. Document all interventions in the CUA Alert System for official tracking and record-keeping.';
+  ws2.getCell(`A${R}`).style = { font:{ italic:true, size:8.5, color:{ argb:C.steel } }, fill:wf(C.yellow), alignment:{ horizontal:'left', vertical:'middle', wrapText:true, indent:1 } };
+  ws2.getRow(R).height = 44; R++;
+
+  ws2.getRow(R).height = 8; R++;
+
   // Table headers
-  ['Student Name','Grade','Intervention Areas','Faculty Comments'].forEach((h,i) => {
+  ['Student Name','Grade','Intervention Areas (Faculty)','Faculty Comments','Date of Contact','Success Coach Comments','Follow Up Required'].forEach((h,i) => {
     ws2.getCell(R,i+1).value = h;
     ws2.getCell(R,i+1).style = { font:{ bold:true, color:{ argb:C.white }, size:9 }, fill:wf(C.steel), alignment:{ horizontal:'left', vertical:'middle', indent:1 } };
   });
@@ -8019,7 +8042,17 @@ async function generateNSCExcelReport() {
     ws2.getCell(R,4).value = data.comment || '';
     ws2.getCell(R,4).style = { font:{ size:8.5 }, fill:wf(C.offwhite), alignment:{ vertical:'middle', wrapText:true, indent:1 } };
 
-    ws2.getRow(R).height = Math.max(24, Math.ceil(data.comment.length / 40) * 14);
+    // Success Coach columns (to be filled out)
+    ws2.getCell(R,5).value = '';
+    ws2.getCell(R,5).style = { font:{ size:9 }, fill:wf(C.yellow), alignment:{ vertical:'middle', horizontal:'center' }, border:{ top:{style:'thin',color:{argb:'FF999999'}}, bottom:{style:'thin',color:{argb:'FF999999'}}, left:{style:'thin',color:{argb:'FF999999'}}, right:{style:'thin',color:{argb:'FF999999'}} } };
+
+    ws2.getCell(R,6).value = '';
+    ws2.getCell(R,6).style = { font:{ size:8.5 }, fill:wf(C.yellow), alignment:{ vertical:'middle', wrapText:true, indent:1 }, border:{ top:{style:'thin',color:{argb:'FF999999'}}, bottom:{style:'thin',color:{argb:'FF999999'}}, left:{style:'thin',color:{argb:'FF999999'}}, right:{style:'thin',color:{argb:'FF999999'}} } };
+
+    ws2.getCell(R,7).value = '';
+    ws2.getCell(R,7).style = { font:{ size:9 }, fill:wf(C.yellow), alignment:{ vertical:'middle', horizontal:'center' }, border:{ top:{style:'thin',color:{argb:'FF999999'}}, bottom:{style:'thin',color:{argb:'FF999999'}}, left:{style:'thin',color:{argb:'FF999999'}}, right:{style:'thin',color:{argb:'FF999999'}} } };
+
+    ws2.getRow(R).height = Math.max(32, Math.ceil(data.comment.length / 40) * 14);
     R++;
   });
 
@@ -8184,6 +8217,22 @@ async function generateNSCExcelReport() {
         ws.getCell(R,3).style = { font:{ bold:p<0.80, size:9, color:{ argb:perfColor.tx } }, fill:wf(perfColor.bg), alignment:{ horizontal:'center', vertical:'middle' } };
         ws.getRow(R).height = 18; R++;
       }
+    }
+
+    // Instructor Comments section
+    if (data.comment) {
+      ws.getRow(R).height = 12; R++;
+
+      ws.mergeCells(`A${R}:C${R}`);
+      ws.getCell(`A${R}`).value = 'INSTRUCTOR COMMENTS';
+      ws.getCell(`A${R}`).style = { font:{ bold:true, color:{ argb:C.white }, size:9.5 }, fill:wf(C.nav), alignment:{ horizontal:'left', vertical:'middle', indent:1 } };
+      ws.getRow(R).height = 20; R++;
+
+      ws.mergeCells(`A${R}:C${R}`);
+      ws.getCell(`A${R}`).value = data.comment;
+      ws.getCell(`A${R}`).style = { font:{ size:9 }, fill:wf(C.offwhite), alignment:{ vertical:'top', wrapText:true, indent:1 } };
+      ws.getRow(R).height = Math.max(30, Math.ceil(data.comment.length / 60) * 14);
+      R++;
     }
   }
 
