@@ -8580,13 +8580,13 @@ async function generateNSCExcelReport() {
 </script>
 
 <script>
-/* ── NIARA Sidebar Navigation v3 ── */
+/* ── NIARA Sidebar Navigation v3.1 ── */
 (function() {
   var NAV_TITLES = {
     'single-exam':   'Single Exam Report',
     'longitudinal':  'Longitudinal Report',
     'psychometric':  'Psychometric Threshold Reference',
-    'blooms':        'Bloom\u2019s Taxonomy in Nursing Education',
+    'blooms':        'Bloom’s Taxonomy in Nursing Education',
     'overview':      'Overview',
     'items':         'Item Analysis',
     'remediation':   'Student Reports',
@@ -8600,10 +8600,14 @@ async function generateNSCExcelReport() {
 
   function setActive(section) {
     var keyMap = {
-      'single-exam':'navSingleExam', 'longitudinal':'navLongitudinal',
-      'psychometric':'navPsychometric', 'blooms':'navBlooms',
-      'overview':'navOverview', 'items':'navItems',
-      'remediation':'navRemediation', 'successcenter':'navSuccesscenter'
+      'single-exam':   'navSingleExam',
+      'longitudinal':  'navLongitudinal',
+      'psychometric':  'navPsychometric',
+      'blooms':        'navBlooms',
+      'overview':      'navOverview',
+      'items':         'navItems',
+      'remediation':   'navRemediation',
+      'successcenter': 'navSuccesscenter'
     };
     NAV_IDS.forEach(function(id) {
       var el = document.getElementById(id);
@@ -8618,17 +8622,23 @@ async function generateNSCExcelReport() {
     if (titleEl) titleEl.textContent = NAV_TITLES[section] || section;
   }
 
+  /* Show/hide main sections.
+     IMPORTANT: #resultsSection uses classList (.visible) not style.display.
+     We NEVER set style.display on #resultsSection to avoid overriding .visible class. */
   function showSection(which) {
-    var nr = document.getElementById('newReportContent');
-    var rs = document.getElementById('resultsSection');
+    var nr  = document.getElementById('newReportContent');
+    var rs  = document.getElementById('resultsSection');
     var ref = document.getElementById('referencesSection');
-    if (nr)  nr.classList.remove('open');
-    if (rs)  rs.style.display = 'none';
-    if (ref) ref.style.display = 'none';
+
+    // Reset all sections
+    if (nr)  { nr.classList.remove('open'); }
+    if (rs)  { rs.classList.remove('visible'); rs.style.display = ''; }
+    if (ref) { ref.style.display = 'none'; }
+
     if (which === 'upload') {
       if (nr) nr.classList.add('open');
     } else if (which === 'results') {
-      if (rs) rs.style.display = '';
+      if (rs) { rs.classList.add('visible'); rs.style.display = ''; }
     } else if (which === 'references') {
       if (ref) ref.style.display = '';
     }
@@ -8636,21 +8646,22 @@ async function generateNSCExcelReport() {
 
   function setLongitudinalState(enabled) {
     try {
-      if (enabled && typeof longitudinalOn !== 'undefined' && !longitudinalOn) {
-        if (typeof toggleLongitudinal === 'function') toggleLongitudinal();
-      } else if (!enabled && typeof longitudinalOn !== 'undefined' && longitudinalOn) {
-        if (typeof toggleLongitudinal === 'function') toggleLongitudinal();
+      /* longitudinalOn is a let at top of main script — accessible here as a global */
+      if (enabled) {
+        if (typeof longitudinalOn !== 'undefined' && !longitudinalOn) {
+          if (typeof toggleLongitudinal === 'function') toggleLongitudinal();
+        }
+      } else {
+        if (typeof longitudinalOn !== 'undefined' && longitudinalOn) {
+          if (typeof toggleLongitudinal === 'function') toggleLongitudinal();
+        }
       }
-    } catch(e) {}
+    } catch(e) { /* longitudinalOn may not be accessible in strict environments */ }
   }
 
   function showLegendSection(which) {
-    // Expand target section, collapse the other
     var psyBody = document.getElementById('legendBody');
-    var psyBtn  = document.getElementById('legendToggleBtn');
     var blmBody = document.getElementById('bloomsLegendBody');
-    var blmBtn  = document.getElementById('bloomsLegendToggleBtn');
-
     if (which === 'psychometric') {
       if (psyBody && psyBody.classList.contains('collapsed')) {
         if (typeof toggleLegend === 'function') toggleLegend();
@@ -8670,7 +8681,6 @@ async function generateNSCExcelReport() {
 
   window.sidebarNav = function(section) {
     setActive(section);
-
     var singleCard = document.getElementById('stepCardSingle');
     var longCard   = document.getElementById('stepCardLong');
 
@@ -8691,42 +8701,57 @@ async function generateNSCExcelReport() {
       showLegendSection(section);
 
     } else {
-      // Analysis results tabs
+      /* Analysis result tabs: show results section and switch tab panel */
       showSection('results');
       if (typeof switchDashTab === 'function') switchDashTab(section);
     }
   };
 
+  /* Called by patched renderResults after generation completes.
+     Only updates sidebar UI — does NOT touch section visibility,
+     because generateReport() handles showing #resultsSection itself. */
   window.showResultsNav = function() {
     document.querySelectorAll('.results-nav-item').forEach(function(el) {
       el.style.display = '';
     });
-    sidebarNav('overview');
+    setActive('overview');
   };
 
   document.addEventListener('DOMContentLoaded', function() {
-    // Set initial state: single exam mode
+    /* Set initial state: single exam mode — hide longitudinal card */
     var longCard = document.getElementById('stepCardLong');
     if (longCard) longCard.style.display = 'none';
 
-    // Patch renderResults
+    /* Ensure newReportContent is open on start */
+    var nr = document.getElementById('newReportContent');
+    if (nr && !nr.classList.contains('open')) nr.classList.add('open');
+
+    /* Patch renderResults: after report generates, reveal results nav in sidebar.
+       The actual section show/hide is handled by generateReport() itself. */
     var origRender = window.renderResults;
     if (typeof origRender === 'function') {
       window.renderResults = function() {
         origRender.apply(this, arguments);
-        showResultsNav();
+        /* Small delay so generateReport's classList.add('visible') runs first */
+        setTimeout(function() { window.showResultsNav(); }, 50);
       };
     }
 
-    // Patch clearAndRestart
+    /* Patch clearAndRestart: reset sidebar to single-exam state */
     var origClear = window.clearAndRestart;
     if (typeof origClear === 'function') {
       window.clearAndRestart = function() {
         origClear.apply(this, arguments);
+        /* origClear already collapses form and hides results via classList */
         document.querySelectorAll('.results-nav-item').forEach(function(el) {
           el.style.display = 'none';
         });
-        sidebarNav('single-exam');
+        setActive('single-exam');
+        /* Ensure the single exam card is visible, longitudinal hidden */
+        var singleCard = document.getElementById('stepCardSingle');
+        var longCard   = document.getElementById('stepCardLong');
+        if (singleCard) singleCard.style.display = '';
+        if (longCard)   longCard.style.display = 'none';
       };
     }
   });
