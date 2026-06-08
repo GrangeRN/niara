@@ -307,10 +307,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     color: var(--text-light);
   }
   .upload-zone.has-file {
-    border-color: var(--steel);
-    background: var(--powder-lt);
+    border: 2px solid var(--flag-keep-bg);
+    background: var(--correct-bg);
   }
-  .upload-zone.has-file h3 { color: var(--navy); }
+  .upload-zone.has-file h3 { color: var(--flag-keep-bg); }
   .file-name-display {
     font-size: 0.82rem;
     color: var(--steel);
@@ -2798,7 +2798,7 @@ function switchDashTab(tabId) {
   // Logo is embedded as base64 in production.
   // For GitHub deployment, replace LOGO_PLACEHOLDER with actual base64.
   const img = document.getElementById('logoImg');
-  if (img.src.includes('LOGO_PLACEHOLDER')) {
+  if (img && img.src.includes('LOGO_PLACEHOLDER')) {
     img.style.display = 'none';
   }
 })();
@@ -8718,41 +8718,43 @@ async function generateNSCExcelReport() {
   };
 
   document.addEventListener('DOMContentLoaded', function() {
-    /* Set initial state: single exam mode — hide longitudinal card */
+    /* Set initial state: single exam mode — hide longitudinal card and results nav */
     var longCard = document.getElementById('stepCardLong');
     if (longCard) longCard.style.display = 'none';
+
+    /* Hide results nav items until a report is generated */
+    document.querySelectorAll('.results-nav-item').forEach(function(el) {
+      el.style.display = 'none';
+    });
 
     /* Ensure newReportContent is open on start */
     var nr = document.getElementById('newReportContent');
     if (nr && !nr.classList.contains('open')) nr.classList.add('open');
 
-    /* Patch renderResults: after report generates, reveal results nav in sidebar.
-       The actual section show/hide is handled by generateReport() itself. */
-    var origRender = window.renderResults;
-    if (typeof origRender === 'function') {
-      window.renderResults = function() {
-        origRender.apply(this, arguments);
-        /* Small delay so generateReport's classList.add('visible') runs first */
-        setTimeout(function() { window.showResultsNav(); }, 50);
-      };
-    }
-
-    /* Patch clearAndRestart: reset sidebar to single-exam state */
-    var origClear = window.clearAndRestart;
-    if (typeof origClear === 'function') {
-      window.clearAndRestart = function() {
-        origClear.apply(this, arguments);
-        /* origClear already collapses form and hides results via classList */
-        document.querySelectorAll('.results-nav-item').forEach(function(el) {
-          el.style.display = 'none';
-        });
-        setActive('single-exam');
-        /* Ensure the single exam card is visible, longitudinal hidden */
-        var singleCard = document.getElementById('stepCardSingle');
-        var longCard   = document.getElementById('stepCardLong');
-        if (singleCard) singleCard.style.display = '';
-        if (longCard)   longCard.style.display = 'none';
-      };
+    /* Watch #resultsSection for .visible class changes.
+       generateReport() adds .visible after rendering; clearAndRestart() removes it.
+       This avoids patching renderResults() which generateReport() calls via lexical binding. */
+    var rs = document.getElementById('resultsSection');
+    if (rs && window.MutationObserver) {
+      var wasVisible = false;
+      new MutationObserver(function() {
+        var isVisible = rs.classList.contains('visible');
+        if (isVisible && !wasVisible) {
+          /* Report just generated — show results nav, activate Overview */
+          window.showResultsNav();
+        } else if (!isVisible && wasVisible) {
+          /* Report cleared — hide results nav, reset to single-exam */
+          document.querySelectorAll('.results-nav-item').forEach(function(el) {
+            el.style.display = 'none';
+          });
+          setActive('single-exam');
+          var singleCard = document.getElementById('stepCardSingle');
+          var lCard      = document.getElementById('stepCardLong');
+          if (singleCard) singleCard.style.display = '';
+          if (lCard)      lCard.style.display = 'none';
+        }
+        wasVisible = isVisible;
+      }).observe(rs, { attributes: true, attributeFilter: ['class'] });
     }
   });
 })();
