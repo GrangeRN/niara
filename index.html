@@ -1958,6 +1958,45 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
   .sidebar-ver { font-size: 0.61rem; color: rgba(255,255,255,0.24); }
 
+  /* ── REFERENCE OVERLAY (shown over report when report is active) ── */
+  #referencesSection.overlay-mode {
+    position: fixed;
+    top: 0;
+    left: var(--sidebar-w);
+    right: 0;
+    bottom: 0;
+    z-index: 300;
+    background: var(--offwhite);
+    overflow-y: auto;
+    padding: 0 0 40px;
+    box-shadow: -4px 0 24px rgba(0,0,0,0.18);
+    border-left: 3px solid var(--powder);
+  }
+  .ref-overlay-bar {
+    display: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--navy);
+    color: #fff;
+    padding: 10px 20px;
+    align-items: center;
+    gap: 12px;
+  }
+  #referencesSection.overlay-mode .ref-overlay-bar { display: flex; }
+  .ref-overlay-back {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 6px;
+    padding: 5px 14px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .ref-overlay-back:hover { background: rgba(255,255,255,0.28); }
+  .ref-overlay-title { font-size: 0.88rem; font-weight: 600; opacity: 0.85; }
 
   /* ── SIDEBAR BRAND STACK ── */
   .sidebar-brand {
@@ -2549,6 +2588,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
 <!-- ══ REFERENCES ══ -->
 <div id="referencesSection" style="display:none;padding:0 0 32px;">
+<div class="ref-overlay-bar">
+  <button class="ref-overlay-back" onclick="closeRefOverlay()">← Back to Report</button>
+  <span class="ref-overlay-title" id="refOverlayTitle"></span>
+</div>
 <div id="legendArea">
   <div class="legend-section">
     <div class="legend-header" role="button" tabindex="0" onclick="toggleLegend()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLegend();}">
@@ -8667,6 +8710,15 @@ async function generateNSCExcelReport() {
     }
   }
 
+  window.closeRefOverlay = function() {
+    var ref = document.getElementById('referencesSection');
+    if (ref) {
+      ref.classList.remove('overlay-mode');
+      ref.style.display = 'none';
+    }
+    /* resultsSection is still visible — no restoration needed */
+  };
+
   function setLongitudinalState(enabled) {
     try {
       /* longitudinalOn is a let at top of main script — accessible here as a global */
@@ -8720,8 +8772,24 @@ async function generateNSCExcelReport() {
       setLongitudinalState(true);
 
     } else if (section === 'psychometric' || section === 'blooms') {
-      showSection('references');
-      showLegendSection(section);
+      var rsCheck = document.getElementById('resultsSection');
+      if (rsCheck && rsCheck.classList.contains('visible')) {
+        /* Report is active — float references over the report, don't destroy it */
+        var ref = document.getElementById('referencesSection');
+        if (ref) {
+          ref.style.display = '';
+          ref.classList.add('overlay-mode');
+          var titleEl = document.getElementById('refOverlayTitle');
+          if (titleEl) titleEl.textContent = section === 'psychometric' ? 'Psychometric Threshold Reference' : "Bloom's Taxonomy in Nursing Education";
+          ref.scrollTop = 0;
+        }
+        showLegendSection(section);
+        /* intentionally do NOT call setActive() here — keep the current results tab highlighted */
+      } else {
+        setActive(section);
+        showSection('references');
+        showLegendSection(section);
+      }
 
     } else {
       /* Analysis result tabs: show results section and switch tab panel */
