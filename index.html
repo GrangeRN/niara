@@ -1930,6 +1930,21 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
   .nav-btn.active svg { opacity: 1; }
 
+  /* Analysis Results nav items — light blue tint to signal new context */
+  .results-nav-item.nav-btn {
+    background: rgba(138,175,212,0.18);
+    border-left: 2px solid rgba(138,175,212,0.30);
+    padding-left: 10px;
+  }
+  .results-nav-item.nav-btn:hover {
+    background: rgba(138,175,212,0.30);
+    color: #fff;
+  }
+  .results-nav-item.nav-btn.active {
+    background: rgba(74,122,181,0.50);
+    border-left: 2px solid var(--powder);
+  }
+
   .sidebar-foot {
     padding: 12px 14px;
     border-top: 1px solid rgba(255,255,255,0.08);
@@ -2143,6 +2158,14 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       Success Center
     </button>
+    <button class="nav-btn results-nav-item" id="navDownloadExam" onclick="downloadExcel()" style="display:none;" aria-label="Download Single Exam Report">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download Exam Report
+    </button>
+    <button class="nav-btn results-nav-item" id="downloadLongBtn" onclick="downloadLongitudinal()" style="display:none;" aria-label="Download Longitudinal Report">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Download Longitudinal
+    </button>
 
   </nav>
   <div class="sidebar-foot">
@@ -2314,14 +2337,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="dash-header-subtitle">Nursing Item Analysis &amp; Reporting Assistant &mdash; GrangeRN</div>
         <div class="dash-header-exam" id="dashExamName">Assessment Dashboard</div>
         <div class="dash-header-meta" id="dashMeta"></div>
-      </div>
-      <div class="dash-download-row">
-        <button class="download-btn download-primary" onclick="downloadExcel()">
-          ⬇ Download Single Exam Report
-        </button>
-        <button class="download-btn download-secondary" id="downloadLongBtn" onclick="downloadLongitudinal()" style="display:none;">
-          ⬇ Download Longitudinal Exam Report
-        </button>
       </div>
     </div>
 
@@ -3825,7 +3840,11 @@ function renderResults() {
   } catch(e) {}
 
   // ── Module/Chapter Performance Table ──
-  const modScoresSorted = Object.entries(classStats.modScores || {}).sort((a,b) => a[0].localeCompare(b[0]));
+  const modScoresSorted = Object.entries(classStats.modScores || {}).sort((a,b) => {
+    const pA = a[1].total > 0 ? a[1].correct / a[1].total : 0;
+    const pB = b[1].total > 0 ? b[1].correct / b[1].total : 0;
+    return pA - pB; // ascending: biggest area of improvement first
+  });
   if (modScoresSorted.length > 0) {
     let modHtml = '<div class="chart-card"><div class="chart-card-title">Module / Content Area Performance</div><table style="width:100%;font-size:0.88rem;"><thead><tr><th style="text-align:left;">Module/Content Area</th><th>Items</th><th>% Correct</th><th>Performance</th></tr></thead><tbody>';
     for (const [mod, mp] of modScoresSorted) {
@@ -4847,7 +4866,7 @@ function showStudentReport() {
         ${pctScore}%
       </div>
       <div style="display:flex;gap:8px;">
-        <button onclick="openStudentReportModal('${sid}')" style="font-size:0.78rem;padding:6px 14px;background:var(--navy);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;">⬇ Download Student Report</button>
+        <button onclick="openStudentReportModal('${sid}')" style="font-size:0.78rem;padding:6px 14px;background:var(--navy);color:white;border:2px solid rgba(255,255,255,0.7);border-radius:6px;cursor:pointer;font-weight:600;">⬇ Download Student Report</button>
         <button onclick="closeStudentReport()" style="font-size:0.78rem;padding:6px 14px;background:var(--offwhite);color:var(--navy);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-weight:600;">✕ Close</button>
       </div>
     </div>
@@ -6294,7 +6313,7 @@ function generateChartImage(type, data, width, height) {
     });
     const maxBin = Math.max(...bins, 1);
     const chartLeft = pad.left, chartRight = W - pad.right;
-    const chartTop = borderPad + 36, chartBottom = H - pad.bottom;
+    const chartTop = borderPad + 36, chartBottom = H - pad.bottom - 18;
     const chartW = chartRight - chartLeft, chartH = chartBottom - chartTop;
     const bw = chartW / 10;
     bins.forEach((cnt, i) => {
@@ -6303,11 +6322,15 @@ function generateChartImage(type, data, width, height) {
       const y = chartBottom - bh;
       ctx.fillStyle = '#4a7ab5';
       ctx.fillRect(x+2, y, bw-4, bh);
-      // x-axis label
-      ctx.fillStyle = '#222';
+      // x-axis label — rotated 45° for readability
+      ctx.save();
+      ctx.translate(x + bw/2, chartBottom + 8);
+      ctx.rotate(-Math.PI / 4);
+      ctx.fillStyle = '#333';
       ctx.font = '9px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText((i*10)+'–'+(i*10+10)+'%', x+bw/2, chartBottom+14);
+      ctx.textAlign = 'right';
+      ctx.fillText((i*10)+'–'+(i*10+10)+'%', 0, 0);
+      ctx.restore();
     });
     // y-axis label
     ctx.save();
@@ -6805,7 +6828,7 @@ async function downloadExcel() {
     const a = document.createElement('a'); a.href = url; a.download = fileName; a.click();
     URL.revokeObjectURL(url);
   } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = '⬇ Download Single Exam Report'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;flex-shrink:0;" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download Exam Report'; }
   }
 }
 
@@ -8712,6 +8735,7 @@ async function generateNSCExcelReport() {
      because generateReport() handles showing #resultsSection itself. */
   window.showResultsNav = function() {
     document.querySelectorAll('.results-nav-item').forEach(function(el) {
+      if (el.id === 'downloadLongBtn') return; // shown only when longitudinal results are present
       el.style.display = '';
     });
     setActive('overview');
