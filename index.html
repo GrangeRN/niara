@@ -2241,6 +2241,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   </div>
   <div class="new-report-content open" id="newReportContent">
 
+  <!-- ══ SESSION RESTORE BANNER ══ -->
+  <div id="sessionRestoreBanner" style="display:none;background:rgba(74,122,181,0.10);border:1px solid rgba(74,122,181,0.30);border-radius:8px;padding:12px 16px;margin-bottom:16px;display:none;align-items:center;gap:12px;flex-wrap:wrap;">
+    <span style="flex:1;font-size:0.88rem;color:var(--navy);font-weight:500;">&#x21BA; You have an unsaved report from this session. Restore it?</span>
+    <button onclick="restoreSession()" style="background:var(--navy);color:#fff;border:none;border-radius:6px;padding:6px 16px;font-size:0.84rem;font-weight:600;cursor:pointer;">Restore Report</button>
+    <button onclick="dismissSessionRestore()" style="background:transparent;color:var(--text-light);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:0.84rem;cursor:pointer;">Start Fresh</button>
+  </div>
+
   <!-- ══ STEP 1: METADATA ══ -->
   <div class="card">
     <div class="card-header">
@@ -3724,6 +3731,12 @@ async function generateReport() {
 
     renderResults();
     setProgress(100, 'Complete!');
+
+    // Save session so the report survives accidental navigation within this tab
+    try {
+      sessionStorage.setItem('niara_csv', csvText);
+      sessionStorage.setItem('niara_form', JSON.stringify({ course, semester, year, examName }));
+    } catch(e) { /* storage quota exceeded — silently skip */ }
 
     document.getElementById('resultsSection').classList.add('visible');
     document.getElementById('resultsSection').scrollIntoView({ behavior:'smooth' });
@@ -5436,6 +5449,7 @@ function toggleBloomsLegend() {
 // ══════════════════════════════════════════════
 function clearAndRestart() {
   if (!confirm('Clear all data and start over? This will reset all uploaded files, results, and settings.')) return;
+  try { sessionStorage.removeItem('niara_csv'); sessionStorage.removeItem('niara_form'); } catch(e) {}
   parsedData = null;
   prevParsedData = [];
   longitudinalOn = false;
@@ -8848,8 +8862,91 @@ async function generateNSCExcelReport() {
         wasVisible = isVisible;
       }).observe(rs, { attributes: true, attributeFilter: ['class'] });
     }
+
+    /* Session restore: show banner if saved CSV exists */
+    try {
+      var savedCsv  = sessionStorage.getItem('niara_csv');
+      var savedForm = sessionStorage.getItem('niara_form');
+      if (savedCsv && savedForm) {
+        var banner = document.getElementById('sessionRestoreBanner');
+        if (banner) banner.style.display = 'flex';
+      }
+    } catch(e) {}
   });
 })();
+
+/* ── Session restore helpers (called from restore banner) ── */
+window.restoreSession = function() {
+  try {
+    var savedCsv  = sessionStorage.getItem('niara_csv');
+    var savedForm = JSON.parse(sessionStorage.getItem('niara_form') || 'null');
+    if (!savedCsv || !savedForm) return;
+
+    /* Populate form fields */
+    var cs = document.getElementById('courseSelect');
+    var ss = document.getElementById('semesterSelect');
+    var ys = document.getElementById('yearSelect');
+    var en = document.getElementById('examName');
+    if (cs) cs.value = savedForm.course   || '';
+    if (ss) ss.value = savedForm.semester || '';
+    if (ys) ys.value = savedForm.year     || '';
+    if (en) en.value = savedForm.examName || '';
+
+    /* Update upload zone label to reflect restored file */
+    var zoneLabel = document.getElementById('mainFileName');
+    var zone      = document.getElementById('mainUploadZone');
+    if (zoneLabel) zoneLabel.textContent = '(restored from session)';
+    if (zone)      zone.classList.add('has-file');
+
+    /* Hide the banner */
+    var banner = document.getElementById('sessionRestoreBanner');
+    if (banner) banner.style.display = 'none';
+
+    /* Run the report directly from stored CSV text */
+    if (typeof parseAttemptDetails === 'function' && typeof renderResults === 'function') {
+      var prog = document.getElementById('progressWrap');
+      if (prog) prog.classList.add('visible');
+      if (typeof setProgress === 'function') setProgress(30, 'Restoring report...');
+
+      setTimeout(function() {
+        try {
+          parsedData = parseAttemptDetails(savedCsv);
+          parsedData.meta = {
+            course:      savedForm.course,
+            semester:    savedForm.semester,
+            year:        savedForm.year,
+            examName:    savedForm.examName,
+            courseLabel: (function() {
+              var sel = document.getElementById('courseSelect');
+              return sel ? sel.options[sel.selectedIndex].text : savedForm.course;
+            })()
+          };
+          if (typeof setProgress === 'function') setProgress(90, 'Rendering...');
+          renderResults();
+          if (typeof setProgress === 'function') setProgress(100, 'Complete!');
+          document.getElementById('resultsSection').classList.add('visible');
+          document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        } catch(e) {
+          if (typeof showAlert === 'function') showAlert('Could not restore session. Please re-upload your CSV.');
+          try { sessionStorage.removeItem('niara_csv'); sessionStorage.removeItem('niara_form'); } catch(ex) {}
+        } finally {
+          setTimeout(function() {
+            if (prog) prog.classList.remove('visible');
+            if (typeof setProgress === 'function') setProgress(0, '');
+          }, 1200);
+        }
+      }, 80);
+    }
+  } catch(e) {
+    if (typeof showAlert === 'function') showAlert('Could not restore session. Please re-upload your CSV.');
+  }
+};
+
+window.dismissSessionRestore = function() {
+  try { sessionStorage.removeItem('niara_csv'); sessionStorage.removeItem('niara_form'); } catch(e) {}
+  var banner = document.getElementById('sessionRestoreBanner');
+  if (banner) banner.style.display = 'none';
+};
 </script>
 </body>
 </html>
