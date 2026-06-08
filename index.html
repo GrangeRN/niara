@@ -2077,6 +2077,71 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
   .topbar-actions { display: flex; align-items: center; gap: 8px; }
 
+  /* ── TOPBAR RESULTS MODE ── */
+  .topbar { position: relative; }
+  .topbar.results {
+    background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 65%, var(--steel) 100%);
+    border-bottom: none;
+    box-shadow: 0 2px 12px rgba(21,45,87,0.22);
+    overflow: hidden;
+    height: auto;
+    min-height: var(--topbar-h);
+    padding: 10px 28px;
+    align-items: center;
+  }
+  .topbar.results::after {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: rgba(138,175,212,0.10);
+    pointer-events: none;
+  }
+  .topbar.results .topbar-title {
+    color: #fff;
+    font-size: 1.05rem;
+  }
+  .topbar.results .topbar-title::before {
+    background: var(--powder);
+    height: 18px;
+  }
+  .topbar.results .clear-btn {
+    color: rgba(255,255,255,0.75);
+    border-color: rgba(255,255,255,0.22);
+    background: rgba(255,255,255,0.07);
+  }
+  .topbar.results .clear-btn:hover {
+    background: rgba(255,255,255,0.16);
+    color: #fff;
+  }
+  .topbar-exam-meta {
+    flex: 1;
+    text-align: right;
+    padding-right: 16px;
+    position: relative;
+    z-index: 1;
+    display: none;
+  }
+  .topbar.results .topbar-exam-meta { display: block; }
+  .topbar-exam-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.97rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+  }
+  .topbar-exam-course {
+    font-size: 0.73rem;
+    color: rgba(255,255,255,0.65);
+    margin-top: 2px;
+    letter-spacing: 0.03em;
+  }
+
+  /* ── SIDEBAR NAV FLEX COLUMN (for pinning References to bottom) ── */
+  .sidebar-nav { display: flex; flex-direction: column; }
+  .nav-spacer { flex: 1; min-height: 12px; }
+
   /* ── MAIN AREA ── */
   .main {
     padding: 28px 32px 60px;
@@ -2168,17 +2233,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       Longitudinal Report
     </button>
 
-    <div class="nav-divider"></div>
-    <div class="nav-group-label">References</div>
-    <button class="nav-btn" id="navPsychometric" onclick="sidebarNav('psychometric')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-      Psychometric Thresholds
-    </button>
-    <button class="nav-btn" id="navBlooms" onclick="sidebarNav('blooms')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-      Bloom's Taxonomy
-    </button>
-
     <div class="nav-divider results-nav-item" id="navResultsDivider" style="display:none;"></div>
     <div class="nav-group-label results-nav-item" id="navResultsLabel" style="display:none;">Analysis Results</div>
     <button class="nav-btn results-nav-item" id="navOverview" onclick="sidebarNav('overview')" style="display:none;" aria-label="Overview dashboard">
@@ -2206,6 +2260,20 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       Download Longitudinal
     </button>
 
+    <!-- Spacer pushes References to the bottom -->
+    <div class="nav-spacer"></div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-group-label">References</div>
+    <button class="nav-btn" id="navPsychometric" onclick="sidebarNav('psychometric')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Psychometric Thresholds
+    </button>
+    <button class="nav-btn" id="navBlooms" onclick="sidebarNav('blooms')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      Bloom's Taxonomy
+    </button>
+
   </nav>
   <div class="sidebar-foot">
     <div class="ferpa-pill">&#128274; FERPA Compliant &middot; Local Only</div>
@@ -2215,8 +2283,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
 <!-- \u2550\u2550 APP CONTENT \u2550\u2550 -->
 <div class="app-content">
-  <header class="topbar">
+  <header class="topbar" id="topbar">
     <div class="topbar-title" id="topbarTitle">New Report</div>
+    <div class="topbar-exam-meta" id="topbarExamMeta">
+      <div class="topbar-exam-name" id="topbarExamName"></div>
+      <div class="topbar-exam-course" id="topbarExamCourse"></div>
+    </div>
     <div class="topbar-actions">
       <button class="clear-btn" onclick="clearAndRestart()" title="Clear all data and start a new analysis">&#x21BA; New Analysis</button>
     </div>
@@ -2377,7 +2449,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   <div id="resultsSection">
 
     <!-- ══ DASHBOARD HEADER ══ -->
-    <div class="dash-header">
+    <div class="dash-header" style="display:none;" aria-hidden="true">
       <div class="dash-header-left">
         <div class="dash-header-title">NIARA Report</div>
         <div class="dash-header-subtitle">Nursing Item Analysis &amp; Reporting Assistant &mdash; GrangeRN</div>
@@ -3739,7 +3811,7 @@ async function generateReport() {
     } catch(e) { /* storage quota exceeded — silently skip */ }
 
     document.getElementById('resultsSection').classList.add('visible');
-    document.getElementById('resultsSection').scrollIntoView({ behavior:'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
   } catch(err) {
     showAlert('<strong>Error parsing file:</strong> ' + err.message + '<br><small>Please ensure you are uploading a Brightspace Attempt Details CSV export.</small>');
@@ -3767,9 +3839,17 @@ function renderResults() {
   if (nrContent) nrContent.classList.remove('open');
   if (nrArrow) nrArrow.classList.remove('open');
 
-  // Dashboard header
+  // Dashboard header (hidden div — kept for any legacy references)
   document.getElementById('dashExamName').textContent = 'Assessment Dashboard: ' + meta.examName;
   document.getElementById('dashMeta').textContent = meta.courseLabel + '  ·  ' + meta.semester + ' ' + meta.year;
+
+  // Activate topbar results mode
+  const topbarEl = document.getElementById('topbar');
+  const topbarExamName = document.getElementById('topbarExamName');
+  const topbarExamCourse = document.getElementById('topbarExamCourse');
+  if (topbarEl) topbarEl.classList.add('results');
+  if (topbarExamName) topbarExamName.textContent = 'Assessment Dashboard: ' + meta.examName;
+  if (topbarExamCourse) topbarExamCourse.textContent = meta.courseLabel + '  ·  ' + meta.semester + ' ' + meta.year;
 
   if (longitudinalOn && prevParsedData.length > 0) {
     document.getElementById('downloadLongBtn').style.display = 'flex';
@@ -5450,6 +5530,12 @@ function toggleBloomsLegend() {
 function clearAndRestart() {
   if (!confirm('Clear all data and start over? This will reset all uploaded files, results, and settings.')) return;
   try { sessionStorage.removeItem('niara_csv'); sessionStorage.removeItem('niara_form'); } catch(e) {}
+  const tb = document.getElementById('topbar');
+  if (tb) tb.classList.remove('results');
+  const tben = document.getElementById('topbarExamName');
+  const tbec = document.getElementById('topbarExamCourse');
+  if (tben) tben.textContent = '';
+  if (tbec) tbec.textContent = '';
   parsedData = null;
   prevParsedData = [];
   longitudinalOn = false;
@@ -8925,7 +9011,7 @@ window.restoreSession = function() {
           renderResults();
           if (typeof setProgress === 'function') setProgress(100, 'Complete!');
           document.getElementById('resultsSection').classList.add('visible');
-          document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+          window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch(e) {
           if (typeof showAlert === 'function') showAlert('Could not restore session. Please re-upload your CSV.');
           try { sessionStorage.removeItem('niara_csv'); sessionStorage.removeItem('niara_form'); } catch(ex) {}
