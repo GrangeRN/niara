@@ -2530,6 +2530,9 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       <!-- NGEN Performance Table -->
       <div id="dashNgenTable"></div>
 
+      <!-- Multi-Select Analysis Table -->
+      <div id="dashMsTable"></div>
+
       <!-- Bloom's Taxonomy Performance Table -->
       <div id="dashBloomsTable"></div>
 
@@ -4029,6 +4032,100 @@ function renderResults() {
     document.getElementById('dashNgenTable').innerHTML = ngenHtml;
   }
 
+  // ── Multi-Select Analysis ──
+  const msAnalysisItems = Object.values(items).filter(i => !i.isBonus && i.qtype === 'M-S' && i.correctAnswers && i.correctAnswers.length > 0 && i.allChoices && Object.keys(i.allChoices).length > 0);
+  const msTblEl = document.getElementById('dashMsTable');
+  if (msAnalysisItems.length > 0 && msTblEl) {
+    // Compute class-wide commission/omission totals and per-question breakdown
+    let msTotalClassPossible = 0, msTotalClassEarned = 0, msTotalClassFP = 0, msTotalClassFN = 0;
+    const msAnalysisRows = [];
+    msAnalysisItems.forEach(function(item) {
+      const numTotal = Object.keys(item.allChoices).length;
+      const correctSet = new Set(item.correctAnswers);
+      let qClassEarned = 0, qClassPossible = 0, qFP = 0, qFN = 0;
+      (item.responses || []).forEach(function(r) {
+        qClassPossible += r.outOf;
+        qClassEarned += r.score;
+        const sel = new Set(r.selected || []);
+        sel.forEach(function(a) { if (!correctSet.has(a)) qFP++; });
+        correctSet.forEach(function(a) { if (!sel.has(a)) qFN++; });
+      });
+      const n = item.n || 0;
+      msTotalClassPossible += qClassPossible;
+      msTotalClassEarned += qClassEarned;
+      msTotalClassFP += qFP;
+      msTotalClassFN += qFN;
+      // Per-option selection rates
+      const optionRows = Object.entries(item.allChoices).sort(function(a,b) { return a[1].order - b[1].order; }).map(function(entry) {
+        const ans = entry[0]; const data = entry[1];
+        const isCorrect = correctSet.has(ans);
+        const selRate = n > 0 ? data.checked / n : 0;
+        return { ans: ans, isCorrect: isCorrect, checked: data.checked, selRate: selRate };
+      });
+      msAnalysisRows.push({ title: item.qtitle, n: n, qClassEarned: qClassEarned, qClassPossible: qClassPossible, numTotal: numTotal, numCorrect: correctSet.size, qFP: qFP, qFN: qFN, options: optionRows });
+    });
+    const msClassPct = msTotalClassPossible > 0 ? Math.round(msTotalClassEarned / msTotalClassPossible * 1000) / 10 : 0;
+    const msClassColor = msClassPct > 90 ? 'var(--flag-keep-bg)' : msClassPct >= 80 ? 'var(--flag-revise-bg)' : 'var(--flag-retire-bg)';
+    let msHtml = '<div class="chart-card"><div class="chart-card-title">Multi-Select (SATA) Analysis</div>';
+    // Class summary row
+    msHtml += '<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;">'
+      + '<div style="background:var(--offwhite);border:1px solid var(--border);border-radius:6px;padding:10px 16px;min-width:140px;">'
+      + '<div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--steel);margin-bottom:3px;">Class M-S Efficiency</div>'
+      + '<div style="font-size:1.2rem;font-weight:700;color:' + msClassColor + ';">' + msClassPct + '%</div>'
+      + '<div style="font-size:0.75rem;color:var(--text-light);">' + fmt1(msTotalClassEarned) + ' / ' + fmt1(msTotalClassPossible) + ' pts</div></div>'
+      + '<div style="background:#fff3f3;border:1px solid #f9c0c0;border-radius:6px;padding:10px 16px;min-width:140px;">'
+      + '<div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#c0392b;margin-bottom:3px;">Commission Errors</div>'
+      + '<div style="font-size:1.2rem;font-weight:700;color:#c0392b;">' + msTotalClassFP + '</div>'
+      + '<div style="font-size:0.75rem;color:var(--text-light);">wrong options selected (class total)</div></div>'
+      + '<div style="background:#fff8e8;border:1px solid #f0d090;border-radius:6px;padding:10px 16px;min-width:140px;">'
+      + '<div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#b07000;margin-bottom:3px;">Omission Errors</div>'
+      + '<div style="font-size:1.2rem;font-weight:700;color:#b07000;">' + msTotalClassFN + '</div>'
+      + '<div style="font-size:0.75rem;color:var(--text-light);">correct options missed (class total)</div></div>'
+      + '</div>';
+    // Per-question breakdown
+    msAnalysisRows.forEach(function(q) {
+      const qAvg = q.qClassPossible > 0 ? Math.round(q.qClassEarned / q.qClassPossible * 1000) / 10 : 0;
+      const qColor = qAvg > 90 ? 'var(--flag-keep-bg)' : qAvg >= 80 ? 'var(--flag-revise-bg)' : 'var(--flag-retire-bg)';
+      msHtml += '<div style="border:1px solid var(--border);border-radius:6px;padding:12px 14px;margin-bottom:10px;">'
+        + '<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px;flex-wrap:wrap;">'
+        + '<div style="font-weight:700;font-size:0.88rem;color:var(--navy);flex:1;">' + esc(q.title) + '</div>'
+        + '<div style="font-size:0.82rem;color:' + qColor + ';font-weight:700;">' + qAvg + '% avg</div>'
+        + '<div style="font-size:0.78rem;color:var(--text-light);">' + q.numCorrect + ' correct / ' + q.numTotal + ' options &ensp; n=' + q.n + '</div>'
+        + '</div>';
+      // Option table
+      msHtml += '<table style="width:100%;font-size:0.8rem;border-collapse:collapse;">';
+      q.options.forEach(function(opt) {
+        const barColor = opt.isCorrect ? '#1b7a3e' : '#c0392b';
+        const barBg = opt.isCorrect ? '#e8f5e9' : '#fce4ec';
+        const label = opt.isCorrect ? '<span style="color:#1b7a3e;font-weight:700;">&#10003; Correct</span>' : '<span style="color:#c0392b;">&#10007; Wrong</span>';
+        const selPct = Math.round(opt.selRate * 100);
+        const selBarW = Math.min(100, selPct);
+        msHtml += '<tr style="background:' + barBg + ';border-bottom:1px solid rgba(0,0,0,0.06);">'
+          + '<td style="padding:4px 8px;width:16px;">' + label + '</td>'
+          + '<td style="padding:4px 8px;max-width:260px;word-break:break-word;">' + esc(opt.ans) + '</td>'
+          + '<td style="padding:4px 8px;width:140px;">'
+          + '<div style="display:flex;align-items:center;gap:6px;">'
+          + '<div style="flex:1;background:#e0e0e0;border-radius:3px;height:6px;"><div style="background:' + barColor + ';width:' + selBarW + '%;height:100%;border-radius:3px;"></div></div>'
+          + '<span style="font-size:0.75rem;white-space:nowrap;color:var(--navy);font-weight:600;">' + opt.checked + '/' + q.n + ' (' + selPct + '%)</span>'
+          + '</div>'
+          + '</td></tr>';
+      });
+      msHtml += '</table>';
+      if (q.qFP > 0 || q.qFN > 0) {
+        msHtml += '<div style="font-size:0.75rem;color:var(--text-light);margin-top:6px;">'
+          + (q.qFP > 0 ? '<span style="color:#c0392b;">&#10007; ' + q.qFP + ' commission error' + (q.qFP !== 1 ? 's' : '') + ' (wrong options selected)</span>' : '')
+          + (q.qFP > 0 && q.qFN > 0 ? ' &ensp; ' : '')
+          + (q.qFN > 0 ? '<span style="color:#b07000;">&#9651; ' + q.qFN + ' omission error' + (q.qFN !== 1 ? 's' : '') + ' (correct options missed)</span>' : '')
+          + '</div>';
+      }
+      msHtml += '</div>';
+    });
+    msHtml += '</div>';
+    msTblEl.innerHTML = msHtml;
+  } else if (msTblEl) {
+    msTblEl.innerHTML = '';
+  }
+
   // ── Bloom's Taxonomy Performance Table ──
   const bloomsItems = Object.values(items).filter(i => !i.isBonus && i.bloomsLevel !== null);
   if (bloomsItems.length > 0) {
@@ -4974,6 +5071,28 @@ function showStudentReport() {
     .filter(([,v]) => v.total > 0 && (v.correct/v.total) < 0.80)
     .sort((a,b) => (a[1].correct/a[1].total) - (b[1].correct/b[1].total))
     .map(([level,v]) => 'Level ' + level + ': ' + bloomsLabels[level] + ' (' + pct(v.correct/v.total) + ')');
+
+  // M-S (Multi-Select) analysis — TP/FP/FN per question
+  const msItems = Object.values(student.items).filter(function(si) { return si.qtype === 'M-S' && !si.isBonus; });
+  var msTotalPossible = 0, msTotalEarned = 0, msTotalFP = 0, msTotalFN = 0;
+  var msQDetails = [];
+  msItems.forEach(function(si) {
+    var item = items[si.qtitle];
+    if (!item || !item.allChoices) return;
+    var numTotal = Object.keys(item.allChoices).length;
+    if (!numTotal) return;
+    var correctSet = new Set(item.correctAnswers || []);
+    var selectedSet = new Set(si.selected || []);
+    var fpAnswers = Array.from(selectedSet).filter(function(a) { return !correctSet.has(a); });
+    var fnAnswers = Array.from(correctSet).filter(function(a) { return !selectedSet.has(a); });
+    msTotalPossible += si.outOf;
+    msTotalEarned += si.score;
+    msTotalFP += fpAnswers.length;
+    msTotalFN += fnAnswers.length;
+    msQDetails.push({ qtitle: si.qtitle, qnum: parseInt(si.qnum) || 0, score: si.score, maxPts: si.outOf, fp: fpAnswers.length, fn: fnAnswers.length, numTotal: numTotal, numCorrect: correctSet.size, fpAnswers: fpAnswers, fnAnswers: fnAnswers });
+  });
+  var hasMsItems = msQDetails.length > 0;
+
   let remText = '';
   if (!weakMods.length && !weakNGEN.length && !weakBlooms.length) {
     remText = 'Performance is consistent across all content areas, question types, and cognitive levels. No priority remediation areas identified at this time.';
@@ -5096,6 +5215,56 @@ function showStudentReport() {
   html += `<div style="border:1px solid var(--border);border-top:none;padding:16px 20px;">
     ${bloomsHtml}
   </div>`;
+
+  // ── Multi-Select (SATA) Performance card ──
+  if (hasMsItems) {
+    var msEarnedPct = msTotalPossible > 0 ? Math.round(msTotalEarned / msTotalPossible * 1000) / 10 : 0;
+    var msColor = msEarnedPct > 90 ? '#155a2e' : msEarnedPct >= 80 ? '#1a4a8a' : '#8b0000';
+    var msBgColor = msEarnedPct > 90 ? '#e8f5e9' : msEarnedPct >= 80 ? '#dce8f8' : '#fce4ec';
+    var barW = Math.min(100, msEarnedPct);
+    var msHtml = '<div class="module-label" style="margin-bottom:12px;">Multi-Select (SATA) Performance</div>';
+    msHtml += '<div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;flex-wrap:wrap;">'
+      + '<div style="font-size:1.1rem;font-weight:700;color:' + msColor + ';">' + fmt1(msTotalEarned) + ' / ' + fmt1(msTotalPossible) + ' pts</div>'
+      + '<div style="flex:1;min-width:120px;"><div style="background:#e0e0e0;border-radius:4px;height:8px;"><div style="background:' + msColor + ';width:' + barW + '%;height:100%;border-radius:4px;"></div></div></div>'
+      + '<div style="font-size:1rem;font-weight:700;color:' + msColor + ';">' + msEarnedPct + '%</div>'
+      + '</div>';
+    msHtml += '<div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;">'
+      + '<div style="flex:1;min-width:140px;background:#fff3f3;border:1px solid #f9c0c0;border-radius:6px;padding:10px 14px;">'
+      + '<div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#c0392b;margin-bottom:4px;">Wrong Options Selected</div>'
+      + '<div style="font-size:1.2rem;font-weight:700;color:#c0392b;">' + msTotalFP + '</div>'
+      + '<div style="font-size:0.78rem;color:#888;margin-top:2px;">commission errors</div></div>'
+      + '<div style="flex:1;min-width:140px;background:#fff8e8;border:1px solid #f0d090;border-radius:6px;padding:10px 14px;">'
+      + '<div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#b07000;margin-bottom:4px;">Correct Options Missed</div>'
+      + '<div style="font-size:1.2rem;font-weight:700;color:#b07000;">' + msTotalFN + '</div>'
+      + '<div style="font-size:0.78rem;color:#888;margin-top:2px;">omission errors</div></div>'
+      + '</div>';
+    var msRowsHtml = '';
+    msQDetails.slice().sort(function(a,b) { return a.qnum - b.qnum; }).forEach(function(q) {
+      var qPct = q.maxPts > 0 ? q.score / q.maxPts : 0;
+      var qColor = qPct > 0.90 ? '#155a2e' : qPct >= 0.80 ? '#1a4a8a' : '#8b0000';
+      var qBg = qPct > 0.90 ? '#e8f5e9' : qPct >= 0.80 ? '#dce8f8' : '#fce4ec';
+      var statusIcon = (q.fp === 0 && q.fn === 0) ? '<span style="color:#155a2e;">&#10003;</span>'
+        : q.score === 0 ? '<span style="color:#8b0000;">&#10007;</span>'
+        : '<span style="color:#b07000;">&#9651;</span>';
+      var fpDetail = q.fpAnswers.map(function(a) { return '<div style="font-size:0.73rem;color:#c0392b;">&#10007; ' + esc(a) + '</div>'; }).join('');
+      var fnDetail = q.fnAnswers.map(function(a) { return '<div style="font-size:0.73rem;color:#b07000;">&#9651; ' + esc(a) + '</div>'; }).join('');
+      msRowsHtml += '<tr style="background:' + qBg + ';">'
+        + '<td style="padding:5px 10px;">' + statusIcon + ' ' + esc(q.qtitle || 'Q' + q.qnum) + '</td>'
+        + '<td style="padding:5px 10px;text-align:center;font-weight:700;color:' + qColor + ';">' + fmt1(q.score) + '/' + fmt1(q.maxPts) + '</td>'
+        + '<td style="padding:5px 10px;">' + (q.fp > 0 ? '<span style="color:#c0392b;font-weight:700;">' + q.fp + '</span>' + (fpDetail ? '<div style="margin-top:2px;">' + fpDetail + '</div>' : '') : '<span style="color:#aaa;">0</span>') + '</td>'
+        + '<td style="padding:5px 10px;">' + (q.fn > 0 ? '<span style="color:#b07000;font-weight:700;">' + q.fn + '</span>' + (fnDetail ? '<div style="margin-top:2px;">' + fnDetail + '</div>' : '') : '<span style="color:#aaa;">0</span>') + '</td>'
+        + '</tr>';
+    });
+    msHtml += '<table style="font-size:0.82rem;width:100%;border-collapse:collapse;">'
+      + '<thead><tr>'
+      + '<th style="' + thS + 'text-align:left;">Question</th>'
+      + '<th style="' + thS + 'text-align:center;">Score</th>'
+      + '<th style="' + thS + 'text-align:center;">Wrong Selected</th>'
+      + '<th style="' + thS + 'text-align:center;">Correct Missed</th>'
+      + '</tr></thead><tbody>' + msRowsHtml + '</tbody></table>';
+    msHtml += '<div style="font-size:0.75rem;color:var(--text-light);margin-top:8px;line-height:1.5;">&#10007; Wrong Selected = commission error (incorrect option checked) &ensp; &#9651; Correct Missed = omission error (correct option not checked)</div>';
+    html += '<div style="border:1px solid var(--border);border-top:none;padding:16px 20px;">' + msHtml + '</div>';
+  }
 
   // ── Remediation — full width below both tables ──
   html += `<div style="border:1px solid var(--border);border-top:none;padding:16px 20px;">
