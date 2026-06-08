@@ -2078,7 +2078,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   .topbar-actions { display: flex; align-items: center; gap: 8px; }
 
   /* ── TOPBAR RESULTS MODE ── */
-  .topbar { position: relative; }
   .topbar.results {
     background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 65%, var(--steel) 100%);
     border-bottom: none;
@@ -2926,8 +2925,8 @@ function switchDashTab(tabId) {
   document.querySelectorAll('.dash-panel').forEach(p => { p.classList.remove('active'); p.setAttribute('aria-hidden', 'true'); });
   const panel = document.getElementById(map[tabId]);
   if (panel) { panel.classList.add('active'); panel.setAttribute('aria-hidden', 'false'); }
-  // Scroll to top of results
-  document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+  // Scroll to top so the sticky topbar is always visible
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ── Logo embed (load from file if available) ──
