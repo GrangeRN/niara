@@ -2272,6 +2272,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
       Bloom's Taxonomy
     </button>
+    <button class="nav-btn" id="navBrightspace" onclick="sidebarNav('brightspace')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Brightspace Setup
+    </button>
 
   </nav>
   <div class="sidebar-foot">
@@ -2673,14 +2677,9 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   <button class="ref-overlay-back" onclick="closeRefOverlay()">← Back to Report</button>
   <span class="ref-overlay-title" id="refOverlayTitle"></span>
 </div>
-<div id="legendArea">
-  <div class="legend-section">
-    <div class="legend-header" role="button" tabindex="0" onclick="toggleLegend()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLegend();}">
-      <h3>Psychometric Threshold Reference — How NIARA Categorizes Items</h3>
-      <button class="collapse-toggle" id="legendToggleBtn" aria-expanded="false" aria-controls="legendBody">▼ Expand</button>
-    </div>
-    <div class="collapsible-body collapsed" id="legendBody" style="max-height:0;">
-      <div class="legend-body">
+<div id="psychometricContent" style="display:none;max-width:1100px;margin:0 auto;padding:0 24px 40px;">
+  <h3 style="font-size:1.1rem;font-weight:700;color:var(--navy);margin:20px 0;">Psychometric Threshold Reference — How NIARA Categorizes Items</h3>
+  <div class="legend-body">
         <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:18px;line-height:1.6;">
           NIARA applies established psychometric criteria from classical test theory to classify each exam item. These thresholds are derived from the educational measurement literature including McDonald (1999), Haladyna &amp; Rodriguez (2013), Billings &amp; Halstead (2020), and NCSBN item development standards. All calculations are performed locally in your browser; no student data is transmitted.
         </p>
@@ -2815,20 +2814,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
           <br><br>
           <em>All thresholds reflect standards commonly applied in nursing education psychometrics and are intended to guide, not replace, faculty professional judgment. Items flagged by NIARA should be reviewed in context of course content, student population, and curricular goals before final decisions are made. For pool-based exams, single-semester statistics on items with fewer than 15 responses should be treated as preliminary signals only. Longitudinal data across multiple cohorts provides the most defensible basis for item revision or retirement decisions.</em>
         </div>
-      </div>
-    </div>
   </div>
 </div>
 
-<!-- ══ BLOOM'S TAXONOMY REFERENCE ══ -->
-<div style="max-width:1100px;margin:0 auto;padding:0 24px 40px;">
-  <div class="legend-section">
-    <div class="legend-header" role="button" tabindex="0" onclick="toggleBloomsLegend()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleBloomsLegend();}">
-      <h3>Understanding Bloom's Taxonomy in Nursing Education</h3>
-      <button class="collapse-toggle" id="bloomsLegendToggleBtn" aria-expanded="false" aria-controls="bloomsLegendBody">▼ Expand</button>
-    </div>
-    <div class="collapsible-body collapsed" id="bloomsLegendBody" style="max-height:0;">
-      <div class="legend-body">
+<div id="bloomsContent" style="display:none;max-width:1100px;margin:0 auto;padding:0 24px 40px;">
+  <h3 style="font-size:1.1rem;font-weight:700;color:var(--navy);margin:20px 0;">Understanding Bloom's Taxonomy in Nursing Education</h3>
+  <div class="legend-body">
         <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:18px;line-height:1.6;">
           Bloom's Taxonomy classifies questions by cognitive complexity. NIARA tracks performance across all five levels to help identify whether students need support with foundational knowledge or higher-order clinical judgment skills.
         </p>
@@ -2884,10 +2875,131 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <span class="legend-desc">Student demonstrates both content mastery and clinical reasoning ability</span>
           </div>
         </div>
-      </div>
-    </div>
   </div>
 </div>
+
+<div id="brightspaceContent" style="display:none;max-width:1100px;margin:0 auto;padding:0 24px 40px;">
+  <h3 style="font-size:1.1rem;font-weight:700;color:var(--navy);margin:20px 0;">Brightspace Setup &amp; Data Export Guide</h3>
+  <div class="legend-body">
+
+        <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:18px;line-height:1.6;">
+          NIARA reads a specific export file from Brightspace. How you build your exam in Brightspace also determines what content-area and Bloom's data appears in your reports. This guide covers how to get the data and how to set up your exams to get the most out of NIARA.
+        </p>
+
+        <!-- EXPORTING THE DATA -->
+        <div class="legend-card" style="margin-bottom:16px;">
+          <div class="legend-card-title" style="color:var(--navy);">📥 How to Export Your Data from Brightspace</div>
+          <ol style="font-size:0.85rem;line-height:2.1;color:var(--text);margin:0 0 12px 18px;padding:0;">
+            <li>Navigate to your course and click <strong>Quizzes</strong> in the course navigation</li>
+            <li>Find the exam you want to analyze and click the <strong>down arrow (⌄)</strong> to the right of its name</li>
+            <li>Select <strong>Grade</strong> from the dropdown menu that appears</li>
+            <li>On the Grade page, click <strong>Attempt Details</strong></li>
+            <li>Click <strong>Export to CSV</strong> — Brightspace will begin generating the file</li>
+            <li>This typically takes <strong>2–3 minutes</strong> — you do not need to stay on the page</li>
+            <li>When ready, you will receive a notification via the <strong>bell icon</strong> at the top of Brightspace — click the notification to download your file</li>
+            <li>Upload that <strong>.csv file</strong> into NIARA using the file upload button</li>
+          </ol>
+          <div style="background:#fff8e8;border:1px solid #f0d090;border-radius:6px;padding:10px 14px;font-size:0.82rem;line-height:1.5;color:var(--text);">
+            <strong style="color:#b07000;">⚠ Important:</strong> NIARA requires the <strong>Attempt Details</strong> export specifically — not the Question Statistics report, not User Statistics, and not a gradebook export. If you see an upload error, verify you selected Attempt Details. The file contains one row per answer choice per student and is typically 1–10 MB for a standard exam.
+          </div>
+        </div>
+
+        <!-- EXAM SETUP GUIDE -->
+        <div style="font-size:0.78rem;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:var(--navy);margin:24px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--navy);">
+          Exam Setup Guide — Getting the Most Out of NIARA
+        </div>
+
+        <!-- CONTENT AREAS -->
+        <div class="legend-card" style="margin-bottom:16px;">
+          <div class="legend-card-title" style="color:var(--navy);">📂 Content Areas — Section Headers &amp; Pool Titles</div>
+          <p style="font-size:0.85rem;line-height:1.6;color:var(--text);margin-bottom:12px;">
+            The <strong>Module / Topic Area</strong> groupings in NIARA reports come directly from <strong>section headers</strong> and <strong>question pool titles</strong> inside your Brightspace exam. If your exam has no sections or pool titles, NIARA cannot group questions by content area — the exam will still analyze correctly, but topic-level performance breakdowns will not appear.
+          </p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+            <div style="background:var(--offwhite);border:1px solid var(--border);border-radius:6px;padding:12px 14px;">
+              <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--navy);margin-bottom:6px;">Option A — Section Headers</div>
+              <div style="font-size:0.82rem;line-height:1.6;color:var(--text);">When building your exam, use <strong>Add Section</strong> to create named sections. All questions placed in a section inherit that section name as their content area in NIARA. Section titles can be <strong>hidden from students</strong> if you prefer, and questions can be set to <strong>shuffle within each section</strong>.<br><br><em style="color:var(--text-light);">Example: "Chapter 12 Fluids &amp; Electrolytes", "Module 3 Cardiovascular"</em></div>
+            </div>
+            <div style="background:var(--offwhite);border:1px solid var(--border);border-radius:6px;padding:12px 14px;">
+              <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--navy);margin-bottom:6px;">Option B — Question Pool Titles</div>
+              <div style="font-size:0.82rem;line-height:1.6;color:var(--text);">If your exam uses question pools (random selection from a bank), the <strong>pool title</strong> becomes the content area label in NIARA. Name your pools by chapter or module so the groupings are meaningful.<br><br><em style="color:var(--text-light);">Example: "Module 5 Respiratory" instead of "Pool 1"</em></div>
+            </div>
+          </div>
+          <div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:6px;padding:10px 14px;font-size:0.82rem;line-height:1.5;color:var(--text);">
+            💡 <strong>Best practice:</strong> Name sections and pools by the chapter or module they cover. Use whatever naming convention matches your course — what matters is that the label tells you and your students which content area it represents.
+          </div>
+        </div>
+
+        <!-- QUESTION TITLES -->
+        <div class="legend-card" style="margin-bottom:16px;">
+          <div class="legend-card-title" style="color:var(--navy);">🏷 Question Bank Titles — Making Reports Actionable for Students</div>
+          <p style="font-size:0.85rem;line-height:1.6;color:var(--text);margin-bottom:12px;">
+            The <strong>Question Title</strong> field in your Brightspace question bank is the unique identifier NIARA uses for every item. It is what appears in student performance reports when listing the content areas they missed. When a student reads their report, they see the question title — so it needs to tell them something useful about what to go back and study.
+          </p>
+          <div style="font-size:0.85rem;line-height:1.6;color:var(--text);margin-bottom:12px;">
+            A student reading their report sees: <span style="background:#dce8f8;border-radius:4px;padding:2px 8px;font-weight:600;color:var(--navy);">Areas to Review: HTN Meds &nbsp;·&nbsp; Fluid Deficit &nbsp;·&nbsp; COPD Pathophys</span>
+            — a clear, specific title tells them exactly what to study.
+          </div>
+          <ul style="font-size:0.85rem;line-height:1.9;color:var(--text);margin:0 0 12px 18px;padding:0;">
+            <li>Keep titles <strong>1–3 words</strong> that identify the content topic — short enough that a student reading it immediately knows what content area it refers to</li>
+            <li>Give every question a <strong>unique title</strong> — if multiple questions share the same title, NIARA merges their statistics together, making it difficult to identify which specific question needs revision when you go back into Brightspace</li>
+            <li>A unique, descriptive title lets you quickly locate the exact question when the data tells you it needs to be edited or retired</li>
+            <li>Avoid generic labels like "Question 1", "Exam 3 Q7", or leaving Brightspace's default auto-generated title — these appear verbatim in student reports and give no guidance</li>
+          </ul>
+          <div style="background:#fce4ec;border:1px solid #f9c0c0;border-radius:6px;padding:10px 14px;font-size:0.82rem;line-height:1.5;color:var(--text);">
+            <strong style="color:#c0392b;">⚠ Fill-in-the-Blank note:</strong> For FIB questions, Brightspace uses the Question Title as a category label that can be shared across multiple question stems in the same pool (e.g., "Grams to Milligrams"). NIARA handles this correctly by analyzing each unique stem independently. The uniqueness rule above applies primarily to MC, M-S, and Matching items.
+          </div>
+        </div>
+
+        <!-- BLOOM'S TAXONOMY -->
+        <div class="legend-card" style="margin-bottom:16px;">
+          <div class="legend-card-title" style="color:var(--navy);">🧠 Bloom's Taxonomy — Tagging Questions with Cognitive Levels</div>
+          <p style="font-size:0.85rem;line-height:1.6;color:var(--text);margin-bottom:12px;">
+            Bloom's Taxonomy tracking in NIARA uses the <strong>Difficulty</strong> field on each question. This field <em>cannot be set while creating or editing a question</em> — you must assign it separately through the <strong>Question Library</strong>.
+          </p>
+          <div style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--steel);margin-bottom:8px;">How to tag questions with Bloom's levels:</div>
+          <ol style="font-size:0.85rem;line-height:2.1;color:var(--text);margin:0 0 14px 18px;padding:0;">
+            <li>In your course, click <strong>Quizzes</strong> in the navigation</li>
+            <li>At the top of the Quizzes page you will see a row of options: <em>Manage Quizzes, Statistics, LockDown Browser,</em> and <strong>Question Library</strong> — click <strong>Question Library</strong></li>
+            <li>Use the checkboxes to select the questions you want to tag</li>
+            <li>Click <strong>Edit Values</strong> from the action menu that appears</li>
+            <li>Change the <strong>Difficulty</strong> field to the appropriate level (1–5)</li>
+            <li>Save — the tag is stored with the question and carries through into any exam that uses it</li>
+          </ol>
+          <div style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--steel);margin-bottom:8px;">NIARA Bloom's level mapping:</div>
+          <div style="display:grid;grid-template-columns:60px 145px 1fr;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:0.83rem;margin-bottom:14px;">
+            <div style="background:var(--navy);color:white;padding:7px 10px;font-weight:700;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;">Level</div>
+            <div style="background:var(--navy);color:white;padding:7px 10px;font-weight:700;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;">Bloom's Name</div>
+            <div style="background:var(--navy);color:white;padding:7px 10px;font-weight:700;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;">What Students Do</div>
+            <div style="background:#f0f4f8;padding:7px 10px;font-weight:700;border-bottom:1px solid var(--border);">1</div>
+            <div style="background:#f0f4f8;padding:7px 10px;border-bottom:1px solid var(--border);">Remember</div>
+            <div style="background:#f0f4f8;padding:7px 10px;color:var(--text-light);border-bottom:1px solid var(--border);">Recall facts, definitions, normal lab values, drug names</div>
+            <div style="padding:7px 10px;font-weight:700;border-bottom:1px solid var(--border);">2</div>
+            <div style="padding:7px 10px;border-bottom:1px solid var(--border);">Understand</div>
+            <div style="padding:7px 10px;color:var(--text-light);border-bottom:1px solid var(--border);">Explain concepts, interpret data, describe pathophysiology</div>
+            <div style="background:#f0f4f8;padding:7px 10px;font-weight:700;border-bottom:1px solid var(--border);">3</div>
+            <div style="background:#f0f4f8;padding:7px 10px;border-bottom:1px solid var(--border);">Apply</div>
+            <div style="background:#f0f4f8;padding:7px 10px;color:var(--text-light);border-bottom:1px solid var(--border);">Use knowledge in patient scenarios, implement nursing interventions</div>
+            <div style="padding:7px 10px;font-weight:700;border-bottom:1px solid var(--border);">4</div>
+            <div style="padding:7px 10px;border-bottom:1px solid var(--border);">Analyze</div>
+            <div style="padding:7px 10px;color:var(--text-light);border-bottom:1px solid var(--border);">Identify patterns, differentiate conditions, prioritize care</div>
+            <div style="background:#f0f4f8;padding:7px 10px;font-weight:700;">5</div>
+            <div style="background:#f0f4f8;padding:7px 10px;">Evaluate / Create</div>
+            <div style="background:#f0f4f8;padding:7px 10px;color:var(--text-light);">Justify clinical decisions, critique care plans, develop new approaches <em style="font-size:0.78rem;">(Bloom's levels 5 &amp; 6 combined — Brightspace only has 5 difficulty slots)</em></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="background:var(--offwhite);border:1px solid var(--border);border-radius:6px;padding:10px 14px;font-size:0.82rem;line-height:1.5;color:var(--text);">
+              <strong style="color:var(--text-light);">Questions without a difficulty tag</strong> will not appear in the Bloom's Taxonomy chart — this is expected, not an error. They are still fully analyzed for all other statistics (difficulty, discrimination, flags).
+            </div>
+            <div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:6px;padding:10px 14px;font-size:0.82rem;line-height:1.5;color:var(--text);">
+              💡 <strong>NCLEX alignment:</strong> The majority of NCLEX-RN questions test Apply, Analyze, and Evaluate (Levels 3–5). Aim to have most exam items at Level 3 or higher to mirror NCLEX cognitive demands and better prepare students for licensure.
+            </div>
+          </div>
+        </div>
+
+  </div>
+</div><!-- /brightspaceContent -->
+
 </div><!-- /referencesSection -->
 
 <footer>
@@ -5637,6 +5749,16 @@ function toggleLegend() {
 function toggleBloomsLegend() {
   const body = document.getElementById('bloomsLegendBody');
   const btn = document.getElementById('bloomsLegendToggleBtn');
+  const isCollapsed = body.classList.contains('collapsed');
+  body.classList.toggle('collapsed', !isCollapsed);
+  body.style.maxHeight = isCollapsed ? '9999px' : '0';
+  btn.textContent = isCollapsed ? '▲ Collapse' : '▼ Expand';
+  btn.setAttribute('aria-expanded', isCollapsed);
+}
+
+function toggleBrightspaceLegend() {
+  const body = document.getElementById('brightspaceLegendBody');
+  const btn = document.getElementById('brightspaceLegendToggleBtn');
   const isCollapsed = body.classList.contains('collapsed');
   body.classList.toggle('collapsed', !isCollapsed);
   body.style.maxHeight = isCollapsed ? '9999px' : '0';
@@ -8872,7 +8994,8 @@ async function generateNSCExcelReport() {
     'single-exam':   'Single Exam Report',
     'longitudinal':  'Longitudinal Report',
     'psychometric':  'Psychometric Threshold Reference',
-    'blooms':        'Bloom’s Taxonomy in Nursing Education',
+    'blooms':        "Bloom's Taxonomy in Nursing Education",
+    'brightspace':   'Brightspace Setup & Data Export Guide',
     'overview':      'Overview',
     'items':         'Item Analysis',
     'remediation':   'Student Reports',
@@ -8880,7 +9003,7 @@ async function generateNSCExcelReport() {
   };
   var NAV_IDS = [
     'navSingleExam','navLongitudinal',
-    'navPsychometric','navBlooms',
+    'navPsychometric','navBlooms','navBrightspace',
     'navOverview','navItems','navRemediation','navSuccesscenter'
   ];
 
@@ -8890,6 +9013,7 @@ async function generateNSCExcelReport() {
       'longitudinal':  'navLongitudinal',
       'psychometric':  'navPsychometric',
       'blooms':        'navBlooms',
+      'brightspace':   'navBrightspace',
       'overview':      'navOverview',
       'items':         'navItems',
       'remediation':   'navRemediation',
@@ -8955,23 +9079,12 @@ async function generateNSCExcelReport() {
   }
 
   function showLegendSection(which) {
-    var psyBody = document.getElementById('legendBody');
-    var blmBody = document.getElementById('bloomsLegendBody');
-    if (which === 'psychometric') {
-      if (psyBody && psyBody.classList.contains('collapsed')) {
-        if (typeof toggleLegend === 'function') toggleLegend();
-      }
-      if (blmBody && !blmBody.classList.contains('collapsed')) {
-        if (typeof toggleBloomsLegend === 'function') toggleBloomsLegend();
-      }
-    } else {
-      if (blmBody && blmBody.classList.contains('collapsed')) {
-        if (typeof toggleBloomsLegend === 'function') toggleBloomsLegend();
-      }
-      if (psyBody && !psyBody.classList.contains('collapsed')) {
-        if (typeof toggleLegend === 'function') toggleLegend();
-      }
-    }
+    var psyContent = document.getElementById('psychometricContent');
+    var blmContent = document.getElementById('bloomsContent');
+    var bsContent  = document.getElementById('brightspaceContent');
+    if (psyContent) psyContent.style.display = which === 'psychometric' ? '' : 'none';
+    if (blmContent) blmContent.style.display = which === 'blooms'       ? '' : 'none';
+    if (bsContent)  bsContent.style.display  = which === 'brightspace'  ? '' : 'none';
   }
 
   window.sidebarNav = function(section) {
@@ -8991,7 +9104,7 @@ async function generateNSCExcelReport() {
       if (longCard)   longCard.style.display = '';
       setLongitudinalState(true);
 
-    } else if (section === 'psychometric' || section === 'blooms') {
+    } else if (section === 'psychometric' || section === 'blooms' || section === 'brightspace') {
       var rsCheck = document.getElementById('resultsSection');
       if (rsCheck && rsCheck.classList.contains('visible')) {
         /* Report is active — float references over the report, don't destroy it */
@@ -9000,7 +9113,7 @@ async function generateNSCExcelReport() {
           ref.style.display = '';
           ref.classList.add('overlay-mode');
           var titleEl = document.getElementById('refOverlayTitle');
-          if (titleEl) titleEl.textContent = section === 'psychometric' ? 'Psychometric Threshold Reference' : "Bloom's Taxonomy in Nursing Education";
+          if (titleEl) titleEl.textContent = NAV_TITLES[section] || section;
           ref.scrollTop = 0;
         }
         showLegendSection(section);
