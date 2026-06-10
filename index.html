@@ -1193,17 +1193,17 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     gap: 8px;
   }
   .legend-row {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 215px 160px 1fr;
     align-items: center;
-    padding: 5px 0;
+    padding: 6px 0;
     border-bottom: 1px solid var(--offwhite);
-    gap: 12px;
+    gap: 10px;
     font-size: 0.82rem;
   }
   .legend-row:last-child { border-bottom: none; }
-  .legend-val { font-weight: 700; color: var(--navy); white-space: nowrap; }
-  .legend-desc { color: var(--text-light); text-align: right; }
+  .legend-val { font-weight: 700; color: var(--navy); }
+  .legend-desc { color: var(--text-light); text-align: left; }
   .legend-flag-strip {
     display: flex;
     gap: 10px;
@@ -2693,7 +2693,15 @@ https://github.com/nodeca/pako/blob/main/LICENSE
           <div class="legend-flag-strip">
             <div class="legend-flag-item lfi-aac">
               <strong>⚠ AWARD ADDITIONAL CREDIT</strong>
-              A distractor was selected at high rates by high-performing students, suggesting a second answer may be defensibly correct due to wording ambiguity. SME review required before posting grades. Consider awarding credit for both the keyed answer and the flagged distractor for this administration.
+              A wrong answer choice may be defensibly correct, suggesting wording ambiguity or a double-keyed item. SME review required before posting grades. Consider awarding credit for both the keyed answer and the flagged option for this administration.
+              <br><br>
+              <strong style="font-size:0.78rem;">Trigger conditions by item type:</strong>
+              <ul style="margin:6px 0 0 14px;font-size:0.78rem;line-height:1.7;">
+                <li><strong>MC:</strong> A single wrong answer selected by ≥ 40% of students <em>and</em> point-biserial &lt; 0.15 — both conditions required. High distractor rate alone triggers REVISE (post-exam), not AAC.</li>
+                <li><strong>M-S/SATA:</strong> A confirmed-incorrect option selected by ≥ 25% of students.</li>
+                <li><strong>Matching:</strong> ≥ 25% of students chose the same wrong match for a specific prompt.</li>
+                <li><strong>FIB:</strong> Not applicable — FIB uses Verify Answer Key instead.</li>
+              </ul>
             </div>
             <div class="legend-flag-item lfi-vak">
               <strong>🔑 VERIFY ANSWER KEY</strong>
@@ -2719,7 +2727,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <div class="legend-grid">
           <div class="legend-card">
             <div class="legend-card-title" style="color:var(--navy);">📈 Point-Biserial Correlation (r<sub>pb</sub>)</div>
-            <div class="legend-row"><span>r &lt; 0.00</span><span class="legend-val" style="color:#c0392b;">VERIFY ANSWER KEY</span><span class="legend-desc">Negative — high performers chose wrong answer</span></div>
+            <div class="legend-row"><span>r &lt; 0.00</span><span class="legend-val" style="color:#c0392b;">RETIRE</span><span class="legend-desc">Negative — high performers chose wrong answer more often than low performers</span></div>
             <div class="legend-row"><span>0.00 ≤ r &lt; 0.15</span><span class="legend-val" style="color:var(--flag-revise-bg);">REVISE</span><span class="legend-desc">Very low discrimination</span></div>
             <div class="legend-row"><span>0.15 ≤ r &lt; 0.20</span><span class="legend-val" style="color:var(--steel);">REVISE (borderline)</span><span class="legend-desc">Marginal discrimination</span></div>
             <div class="legend-row"><span>r ≥ 0.20</span><span class="legend-val" style="color:var(--navy);">Acceptable</span><span class="legend-desc">Acceptable to strong discrimination</span></div>
@@ -2735,9 +2743,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
           </div>
           <div class="legend-card">
             <div class="legend-card-title" style="color:var(--navy);">🔀 Discrimination Index (D)</div>
-            <div class="legend-row"><span>D &lt; 0.00</span><span class="legend-val" style="color:#c0392b;">VERIFY ANSWER KEY</span><span class="legend-desc">Negative — lower performers outscored upper group</span></div>
-            <div class="legend-row"><span>D ≥ 0.00</span><span class="legend-val" style="color:var(--navy);">Acceptable</span><span class="legend-desc">Upper 27% mean minus lower 27% mean</span></div>
-            <div style="font-size:0.75rem;color:var(--text-light);margin-top:10px;line-height:1.5;">The discrimination index compares item performance between the top and bottom 27% of scorers. <strong>Note for SATA/MAT:</strong> Not used as a flag trigger for these item types.</div>
+            <div class="legend-row"><span>D &lt; 0.00</span><span class="legend-val" style="color:#c0392b;">RETIRE</span><span class="legend-desc">Defective — lower performers outscored upper group</span></div>
+            <div class="legend-row"><span>0.00 ≤ D &lt; 0.10</span><span class="legend-val" style="color:var(--flag-revise-bg);">REVISE</span><span class="legend-desc">Very poor — item contributes almost no discrimination</span></div>
+            <div class="legend-row"><span>0.10 ≤ D &lt; 0.20</span><span class="legend-val" style="color:var(--flag-revise-bg);">REVISE</span><span class="legend-desc">Poor — needs major revision (Ebel &amp; Frisbie, 1991)</span></div>
+            <div class="legend-row"><span>0.20 ≤ D &lt; 0.30</span><span class="legend-val" style="color:var(--steel);">KEEP (marginal)</span><span class="legend-desc">Acceptable but subject to revision — monitor trends</span></div>
+            <div class="legend-row"><span>0.30 ≤ D &lt; 0.40</span><span class="legend-val" style="color:var(--navy);">KEEP</span><span class="legend-desc">Good</span></div>
+            <div class="legend-row"><span>D ≥ 0.40</span><span class="legend-val" style="color:var(--navy);">KEEP</span><span class="legend-desc">Excellent</span></div>
+            <div style="font-size:0.75rem;color:var(--text-light);margin-top:10px;line-height:1.5;">D is the difference between the mean scores of the top 27% and bottom 27% of exam takers on each item (Kelley, 1939). Tiers follow Ebel &amp; Frisbie (1991). Items with D 0.20–0.29 are flagged KEEP but noted as marginal; monitor across administrations. <strong>Note for SATA/MAT:</strong> Not used as a flag trigger for these item types.</div>
           </div>
           <div class="legend-card">
             <div class="legend-card-title" style="color:var(--navy);">⚠ Distractor Concern &amp; Sample Size</div>
@@ -2785,7 +2797,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
           <p style="font-size:0.82rem;color:var(--text-light);line-height:1.6;margin-bottom:10px;">
             For pool-based exams, individual questions may only reach 5–8 students per administration. Flags become more reliable as cumulative responses accumulate across semesters. Pre-grade flags (Verify Answer Key, Award Additional Credit) fire regardless of sample size.
           </p>
-          <div class="legend-row"><span>Cumulative n &lt; 10</span><span class="legend-val" style="color:var(--text-light);">Insufficient Data</span><span class="legend-desc">No post-exam revision flags generated — needs more administrations</span></div>
+          <div class="legend-row"><span>Cumulative n &lt; 15</span><span class="legend-val" style="color:var(--text-light);">Insufficient Data</span><span class="legend-desc">No post-exam revision flags generated — needs more administrations</span></div>
           <div class="legend-row"><span>Cumulative n 10–24</span><span class="legend-val" style="color:var(--steel);">Low Confidence</span><span class="legend-desc">Flags shown as preliminary signals only</span></div>
           <div class="legend-row"><span>Cumulative n 25–49</span><span class="legend-val" style="color:var(--flag-revise-bg);">Moderate Confidence</span><span class="legend-desc">Flags are meaningful — monitor trends</span></div>
           <div class="legend-row"><span>Cumulative n ≥ 50</span><span class="legend-val" style="color:var(--flag-keep-bg);">High Confidence</span><span class="legend-desc">Statistically defensible for accreditation documentation</span></div>
@@ -2798,7 +2810,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
           Haladyna, T. M., &amp; Rodriguez, M. C. (2013). <em>Developing and validating test items.</em> Routledge. &nbsp;|&nbsp;
           McDonald, M. E. (1999). <em>Systematic assessment of learning outcomes: Developing multiple-choice exams.</em> Jones &amp; Bartlett. &nbsp;|&nbsp;
           NCSBN Next Generation NCLEX item development standards (2023). &nbsp;|&nbsp;
-          Ebel, R. L., &amp; Frisbie, D. A. (1991). <em>Essentials of educational measurement</em> (5th ed.). Prentice-Hall.
+          Ebel, R. L., &amp; Frisbie, D. A. (1991). <em>Essentials of educational measurement</em> (5th ed.). Prentice-Hall. &nbsp;|&nbsp;
+          Kelley, T. L. (1939). The selection of upper and lower groups for the validation of test items. <em>Journal of Educational Psychology, 30</em>(1), 17–24.
           <br><br>
           <em>All thresholds reflect standards commonly applied in nursing education psychometrics and are intended to guide, not replace, faculty professional judgment. Items flagged by NIARA should be reviewed in context of course content, student population, and curricular goals before final decisions are made. For pool-based exams, single-semester statistics on items with fewer than 15 responses should be treated as preliminary signals only. Longitudinal data across multiple cohorts provides the most defensible basis for item revision or retirement decisions.</em>
         </div>
@@ -3625,8 +3638,8 @@ function assignFlag(item) {
   const isBonus = !!item.isBonus;
 
   // Small sample — not enough data for reliable post-exam flags
-  if (n < 10) {
-    return { flag: 'REVISE', reason: 'Insufficient data (n=' + n + '). Statistics are unstable with fewer than 10 responses. Monitor over future administrations before drawing conclusions. Use longitudinal data to build confidence.' };
+  if (n < 15) {
+    return { flag: 'REVISE', reason: 'Insufficient data (n=' + n + '). Statistics are unstable with fewer than 15 responses. Monitor over future administrations before drawing conclusions. Use longitudinal data to build confidence.' };
   }
 
   // RETIRE conditions — severe psychometric failure
@@ -3636,6 +3649,9 @@ function assignFlag(item) {
   }
   if (!isSATA && !isMAT && di !== null && di < 0 && !isNearCeiling && !isBonus) {
     return { flag: 'RETIRE', reason: 'Negative discrimination index (D=' + fmt2(di) + '). Lower-performing students outperformed the upper group on this item. This indicates the item is not functioning as intended and may not be salvageable through revision alone.' };
+  }
+  if (!isSATA && !isMAT && di !== null && di < 0.20 && !isNearCeiling && !isBonus) {
+    return { flag: 'REVISE', reason: 'Low discrimination index (D=' + fmt2(di) + '). The upper 27% of scorers did not substantially outperform the lower 27% on this item. Per Ebel & Frisbie (1991), D < 0.20 is considered poor and warrants revision before the next administration.' };
   }
 
   // REVISE conditions
@@ -4036,90 +4052,45 @@ function renderResults() {
   const msAnalysisItems = Object.values(items).filter(i => !i.isBonus && i.qtype === 'M-S' && i.correctAnswers && i.correctAnswers.length > 0 && i.allChoices && Object.keys(i.allChoices).length > 0);
   const msTblEl = document.getElementById('dashMsTable');
   if (msAnalysisItems.length > 0 && msTblEl) {
-    // Compute class-wide commission/omission totals and per-question breakdown
     let msTotalClassPossible = 0, msTotalClassEarned = 0, msTotalClassFP = 0, msTotalClassFN = 0;
-    const msAnalysisRows = [];
     msAnalysisItems.forEach(function(item) {
-      const numTotal = Object.keys(item.allChoices).length;
       const correctSet = new Set(item.correctAnswers);
-      let qClassEarned = 0, qClassPossible = 0, qFP = 0, qFN = 0;
       (item.responses || []).forEach(function(r) {
-        qClassPossible += r.outOf;
-        qClassEarned += r.score;
+        msTotalClassPossible += r.outOf;
+        msTotalClassEarned += r.score;
         const sel = new Set(r.selected || []);
-        sel.forEach(function(a) { if (!correctSet.has(a)) qFP++; });
-        correctSet.forEach(function(a) { if (!sel.has(a)) qFN++; });
+        sel.forEach(function(a) { if (!correctSet.has(a)) msTotalClassFP++; });
+        correctSet.forEach(function(a) { if (!sel.has(a)) msTotalClassFN++; });
       });
-      const n = item.n || 0;
-      msTotalClassPossible += qClassPossible;
-      msTotalClassEarned += qClassEarned;
-      msTotalClassFP += qFP;
-      msTotalClassFN += qFN;
-      // Per-option selection rates
-      const optionRows = Object.entries(item.allChoices).sort(function(a,b) { return a[1].order - b[1].order; }).map(function(entry) {
-        const ans = entry[0]; const data = entry[1];
-        const isCorrect = correctSet.has(ans);
-        const selRate = n > 0 ? data.checked / n : 0;
-        return { ans: ans, isCorrect: isCorrect, checked: data.checked, selRate: selRate };
-      });
-      msAnalysisRows.push({ title: item.qtitle, n: n, qClassEarned: qClassEarned, qClassPossible: qClassPossible, numTotal: numTotal, numCorrect: correctSet.size, qFP: qFP, qFN: qFN, options: optionRows });
     });
     const msClassPct = msTotalClassPossible > 0 ? Math.round(msTotalClassEarned / msTotalClassPossible * 1000) / 10 : 0;
     const msClassColor = msClassPct > 90 ? 'var(--flag-keep-bg)' : msClassPct >= 80 ? 'var(--flag-revise-bg)' : 'var(--flag-retire-bg)';
-    let msHtml = '<div class="chart-card"><div class="chart-card-title">Multi-Select (SATA) Analysis</div>';
-    // Class summary row
-    msHtml += '<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;">'
+    const msItemCount = msAnalysisItems.length;
+    let msHtml = '<div class="chart-card"><div class="chart-card-title">Multi-Select (SATA) Class Performance &mdash; ' + msItemCount + ' item' + (msItemCount !== 1 ? 's' : '') + '</div>';
+    msHtml += '<div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap;">'
       + '<div style="background:var(--offwhite);border:1px solid var(--border);border-radius:6px;padding:10px 16px;min-width:140px;">'
       + '<div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--steel);margin-bottom:3px;">Class M-S Efficiency</div>'
-      + '<div style="font-size:1.2rem;font-weight:700;color:' + msClassColor + ';">' + msClassPct + '%</div>'
-      + '<div style="font-size:0.75rem;color:var(--text-light);">' + fmt1(msTotalClassEarned) + ' / ' + fmt1(msTotalClassPossible) + ' pts</div></div>'
+      + '<div style="font-size:1.4rem;font-weight:700;color:' + msClassColor + ';">' + msClassPct + '%</div>'
+      + '<div style="font-size:0.75rem;color:var(--text-light);">' + fmt1(msTotalClassEarned) + ' / ' + fmt1(msTotalClassPossible) + ' pts earned</div>'
+      + '<div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">total M-S points across all students</div></div>'
       + '<div style="background:#fff3f3;border:1px solid #f9c0c0;border-radius:6px;padding:10px 16px;min-width:140px;">'
       + '<div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#c0392b;margin-bottom:3px;">Commission Errors</div>'
-      + '<div style="font-size:1.2rem;font-weight:700;color:#c0392b;">' + msTotalClassFP + '</div>'
-      + '<div style="font-size:0.75rem;color:var(--text-light);">wrong options selected (class total)</div></div>'
+      + '<div style="font-size:1.4rem;font-weight:700;color:#c0392b;">' + msTotalClassFP + '</div>'
+      + '<div style="font-size:0.75rem;color:var(--text-light);">wrong options selected</div>'
+      + '<div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">each costs 1 option share of points</div></div>'
       + '<div style="background:#fff8e8;border:1px solid #f0d090;border-radius:6px;padding:10px 16px;min-width:140px;">'
       + '<div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#b07000;margin-bottom:3px;">Omission Errors</div>'
-      + '<div style="font-size:1.2rem;font-weight:700;color:#b07000;">' + msTotalClassFN + '</div>'
-      + '<div style="font-size:0.75rem;color:var(--text-light);">correct options missed (class total)</div></div>'
+      + '<div style="font-size:1.4rem;font-weight:700;color:#b07000;">' + msTotalClassFN + '</div>'
+      + '<div style="font-size:0.75rem;color:var(--text-light);">correct options missed</div>'
+      + '<div style="font-size:0.72rem;color:var(--text-light);margin-top:2px;">each costs 1 option share of points</div></div>'
       + '</div>';
-    // Per-question breakdown
-    msAnalysisRows.forEach(function(q) {
-      const qAvg = q.qClassPossible > 0 ? Math.round(q.qClassEarned / q.qClassPossible * 1000) / 10 : 0;
-      const qColor = qAvg > 90 ? 'var(--flag-keep-bg)' : qAvg >= 80 ? 'var(--flag-revise-bg)' : 'var(--flag-retire-bg)';
-      msHtml += '<div style="border:1px solid var(--border);border-radius:6px;padding:12px 14px;margin-bottom:10px;">'
-        + '<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px;flex-wrap:wrap;">'
-        + '<div style="font-weight:700;font-size:0.88rem;color:var(--navy);flex:1;">' + esc(q.title) + '</div>'
-        + '<div style="font-size:0.82rem;color:' + qColor + ';font-weight:700;">' + qAvg + '% avg</div>'
-        + '<div style="font-size:0.78rem;color:var(--text-light);">' + q.numCorrect + ' correct / ' + q.numTotal + ' options &ensp; n=' + q.n + '</div>'
-        + '</div>';
-      // Option table
-      msHtml += '<table style="width:100%;font-size:0.8rem;border-collapse:collapse;">';
-      q.options.forEach(function(opt) {
-        const barColor = opt.isCorrect ? '#1b7a3e' : '#c0392b';
-        const barBg = opt.isCorrect ? '#e8f5e9' : '#fce4ec';
-        const label = opt.isCorrect ? '<span style="color:#1b7a3e;font-weight:700;">&#10003; Correct</span>' : '<span style="color:#c0392b;">&#10007; Wrong</span>';
-        const selPct = Math.round(opt.selRate * 100);
-        const selBarW = Math.min(100, selPct);
-        msHtml += '<tr style="background:' + barBg + ';border-bottom:1px solid rgba(0,0,0,0.06);">'
-          + '<td style="padding:4px 8px;width:16px;">' + label + '</td>'
-          + '<td style="padding:4px 8px;max-width:260px;word-break:break-word;">' + esc(opt.ans) + '</td>'
-          + '<td style="padding:4px 8px;width:140px;">'
-          + '<div style="display:flex;align-items:center;gap:6px;">'
-          + '<div style="flex:1;background:#e0e0e0;border-radius:3px;height:6px;"><div style="background:' + barColor + ';width:' + selBarW + '%;height:100%;border-radius:3px;"></div></div>'
-          + '<span style="font-size:0.75rem;white-space:nowrap;color:var(--navy);font-weight:600;">' + opt.checked + '/' + q.n + ' (' + selPct + '%)</span>'
-          + '</div>'
-          + '</td></tr>';
-      });
-      msHtml += '</table>';
-      if (q.qFP > 0 || q.qFN > 0) {
-        msHtml += '<div style="font-size:0.75rem;color:var(--text-light);margin-top:6px;">'
-          + (q.qFP > 0 ? '<span style="color:#c0392b;">&#10007; ' + q.qFP + ' commission error' + (q.qFP !== 1 ? 's' : '') + ' (wrong options selected)</span>' : '')
-          + (q.qFP > 0 && q.qFN > 0 ? ' &ensp; ' : '')
-          + (q.qFN > 0 ? '<span style="color:#b07000;">&#9651; ' + q.qFN + ' omission error' + (q.qFN !== 1 ? 's' : '') + ' (correct options missed)</span>' : '')
-          + '</div>';
-      }
-      msHtml += '</div>';
-    });
+    msHtml += '<div style="font-size:0.82rem;color:var(--text-light);line-height:1.6;padding:10px 14px;background:var(--offwhite);border-radius:6px;">'
+      + '<strong style="color:var(--navy);">How Brightspace M-S scoring works:</strong> Each answer option is worth an equal share of the item\'s points. '
+      + 'Students earn credit by selecting every correct option <em>and</em> avoiding every wrong option. '
+      + 'A <strong style="color:#c0392b;">commission error</strong> (selecting a wrong option) costs the same as an <strong style="color:#b07000;">omission error</strong> (missing a correct option) — one option\'s point share each. '
+      + 'Scores floor at zero; partial credit is possible but only full selection of all correct options and avoidance of all wrong options earns 100%. '
+      + 'For per-question option-level detail, see the Item Analysis tab.'
+      + '</div>';
     msHtml += '</div>';
     msTblEl.innerHTML = msHtml;
   } else if (msTblEl) {
@@ -5238,31 +5209,12 @@ function showStudentReport() {
       + '<div style="font-size:1.2rem;font-weight:700;color:#b07000;">' + msTotalFN + '</div>'
       + '<div style="font-size:0.78rem;color:#888;margin-top:2px;">omission errors</div></div>'
       + '</div>';
-    var msRowsHtml = '';
-    msQDetails.slice().sort(function(a,b) { return a.qnum - b.qnum; }).forEach(function(q) {
-      var qPct = q.maxPts > 0 ? q.score / q.maxPts : 0;
-      var qColor = qPct > 0.90 ? '#155a2e' : qPct >= 0.80 ? '#1a4a8a' : '#8b0000';
-      var qBg = qPct > 0.90 ? '#e8f5e9' : qPct >= 0.80 ? '#dce8f8' : '#fce4ec';
-      var statusIcon = (q.fp === 0 && q.fn === 0) ? '<span style="color:#155a2e;">&#10003;</span>'
-        : q.score === 0 ? '<span style="color:#8b0000;">&#10007;</span>'
-        : '<span style="color:#b07000;">&#9651;</span>';
-      var fpDetail = q.fpAnswers.map(function(a) { return '<div style="font-size:0.73rem;color:#c0392b;">&#10007; ' + esc(a) + '</div>'; }).join('');
-      var fnDetail = q.fnAnswers.map(function(a) { return '<div style="font-size:0.73rem;color:#b07000;">&#9651; ' + esc(a) + '</div>'; }).join('');
-      msRowsHtml += '<tr style="background:' + qBg + ';">'
-        + '<td style="padding:5px 10px;">' + statusIcon + ' ' + esc(q.qtitle || 'Q' + q.qnum) + '</td>'
-        + '<td style="padding:5px 10px;text-align:center;font-weight:700;color:' + qColor + ';">' + fmt1(q.score) + '/' + fmt1(q.maxPts) + '</td>'
-        + '<td style="padding:5px 10px;">' + (q.fp > 0 ? '<span style="color:#c0392b;font-weight:700;">' + q.fp + '</span>' + (fpDetail ? '<div style="margin-top:2px;">' + fpDetail + '</div>' : '') : '<span style="color:#aaa;">0</span>') + '</td>'
-        + '<td style="padding:5px 10px;">' + (q.fn > 0 ? '<span style="color:#b07000;font-weight:700;">' + q.fn + '</span>' + (fnDetail ? '<div style="margin-top:2px;">' + fnDetail + '</div>' : '') : '<span style="color:#aaa;">0</span>') + '</td>'
-        + '</tr>';
-    });
-    msHtml += '<table style="font-size:0.82rem;width:100%;border-collapse:collapse;">'
-      + '<thead><tr>'
-      + '<th style="' + thS + 'text-align:left;">Question</th>'
-      + '<th style="' + thS + 'text-align:center;">Score</th>'
-      + '<th style="' + thS + 'text-align:center;">Wrong Selected</th>'
-      + '<th style="' + thS + 'text-align:center;">Correct Missed</th>'
-      + '</tr></thead><tbody>' + msRowsHtml + '</tbody></table>';
-    msHtml += '<div style="font-size:0.75rem;color:var(--text-light);margin-top:8px;line-height:1.5;">&#10007; Wrong Selected = commission error (incorrect option checked) &ensp; &#9651; Correct Missed = omission error (correct option not checked)</div>';
+    msHtml += '<div style="font-size:0.82rem;color:var(--text-light);line-height:1.6;padding:10px 14px;background:var(--offwhite);border-radius:6px;margin-top:4px;">'
+      + '<strong style="color:#c0392b;">Commission errors (wrong options selected)</strong> each cost one option\'s point share — you lose points for picking an incorrect choice. '
+      + '<strong style="color:#b07000;">Omission errors (correct options missed)</strong> each cost the same — you lose the credit for that correct option. '
+      + 'Both error types carry equal weight in the scoring formula. Scores floor at zero; no negative scores are possible. '
+      + 'To see exactly which options you selected incorrectly or missed on each question, scroll down to the question-by-question breakdown below.'
+      + '</div>';
     html += '<div style="border:1px solid var(--border);border-top:none;padding:16px 20px;">' + msHtml + '</div>';
   }
 
